@@ -1,0 +1,66 @@
+[
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-mdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-mdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "com.project.swiftaid.composeApp-debug-40:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.project.swiftaid.composeApp-androidMain-42:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-hdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-hdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-xxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\drawable_ic_launcher_background.xml.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\drawable\\ic_launcher_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-xxxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-hdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-xhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\drawable-v24_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\drawable-v24\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-xhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "com.project.swiftaid.composeApp-debug-40:/drawable-v24_ic_launcher_foreground.xml.flat",
+        "source": "com.project.swiftaid.composeApp-androidMain-42:/drawable-v24/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-mdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-xxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-debug-40:\\mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\dhruv\\.gradle\\daemon\\8.14.3\\com.project.swiftaid.composeApp-androidMain-42:\\mipmap-xxxhdpi\\ic_launcher.png"
+    }
+]
