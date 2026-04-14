@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,9 +37,9 @@ fun SignInScreen() {
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF42272B),
-                        Color(0xFF1C1617),
-                        Color(0xFF1C1617)
+                        Color(0xFF283B5A),
+                        Color(0xFF1E212B),
+                        Color(0xFF1E212B)
                     )
                 )
             )
@@ -57,7 +58,7 @@ fun SignInScreen() {
                 imageVector = getSwiftAidIcon(),
                 contentDescription = null,
                 tint = Color.Unspecified,
-                modifier = Modifier.size(72.dp)
+                modifier = Modifier.size(56.dp)
             )
             
             Spacer(modifier = Modifier.height(32.dp))
@@ -85,47 +86,66 @@ fun SignInScreen() {
             Spacer(modifier = Modifier.height(32.dp))
             
             // Email Input
-            OutlinedTextField(
+            BasicTextField(
                 value = email,
                 onValueChange = { email = it },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(52.dp)
                     .background(Color.White, RoundedCornerShape(12.dp)),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    disabledBorderColor = Color.Transparent,
-                ),
-                textStyle = LocalTextStyle.current.copy(color = Color.Black),
-                singleLine = true
+                textStyle = LocalTextStyle.current.copy(color = Color.Black, fontSize = 16.sp),
+                singleLine = true,
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (email.isEmpty()) {
+                            Text("Email", color = Color.Gray, fontSize = 16.sp)
+                        }
+                        innerTextField()
+                    }
+                }
             )
             
             Spacer(modifier = Modifier.height(16.dp))
             
             // Password Input
-            OutlinedTextField(
+            BasicTextField(
                 value = password,
                 onValueChange = { password = it },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(52.dp)
                     .background(Color.White, RoundedCornerShape(12.dp)),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    disabledBorderColor = Color.Transparent,
-                ),
-                textStyle = LocalTextStyle.current.copy(color = Color.Black),
+                textStyle = LocalTextStyle.current.copy(color = Color.Black, fontSize = 16.sp),
                 singleLine = true,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    Icon(
-                        imageVector = getEyeIcon(passwordVisible),
-                        contentDescription = "Toggle Password Visibility",
-                        modifier = Modifier.clickable { passwordVisible = !passwordVisible },
-                        tint = Color.Gray
-                    )
+                decorationBox = { innerTextField ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (password.isEmpty()) {
+                                Text("Password", color = Color.Gray, fontSize = 16.sp)
+                            }
+                            innerTextField()
+                        }
+                        Icon(
+                            imageVector = getEyeIcon(passwordVisible),
+                            contentDescription = "Toggle Password Visibility",
+                            modifier = Modifier.clickable { passwordVisible = !passwordVisible },
+                            tint = Color.Gray
+                        )
+                    }
                 }
             )
             
@@ -143,7 +163,7 @@ fun SignInScreen() {
                         onCheckedChange = { rememberMe = it },
                         modifier = Modifier.offset(x = (-8).dp),
                         colors = CheckboxDefaults.colors(
-                            checkedColor = Color(0xFFFF6F61),
+                            checkedColor = Color(0xFF4A7FF5),
                             uncheckedColor = Color.LightGray,
                             checkmarkColor = Color.White
                         )
@@ -158,7 +178,7 @@ fun SignInScreen() {
                 
                 Text(
                     text = "Forgot Password?",
-                    color = Color(0xFFFF6F61),
+                    color = Color(0xFF4A7FF5),
                     fontSize = 14.sp,
                     maxLines = 1,
                     modifier = Modifier.clickable { }
@@ -174,7 +194,7 @@ fun SignInScreen() {
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6F61))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF336CFC))
             ) {
                 Text(
                     text = "Log In",
@@ -251,7 +271,7 @@ fun SignInScreen() {
                 )
                 Text(
                     text = "Sign Up",
-                    color = Color(0xFFFF6F61),
+                    color = Color(0xFF4A7FF5),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clickable { }
@@ -273,7 +293,7 @@ fun getSwiftAidIcon(): ImageVector {
     ).apply {
         // Red background squircle shape from SVG
         path(fill = Brush.linearGradient(
-            colors = listOf(Color(0xFFFF4B4B), Color(0xFFA20000)),
+            colors = listOf(Color(0xFF007AFF), Color(0xFF0027A8)),
             start = androidx.compose.ui.geometry.Offset(102f, 0f),
             end = androidx.compose.ui.geometry.Offset(921f, 1024f)
         )) {
