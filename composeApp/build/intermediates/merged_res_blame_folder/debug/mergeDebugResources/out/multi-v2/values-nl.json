@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.project.swiftaid.composeApp-mergeDebugResources-38:/values-nl/values-nl.xml",
+            "outputFile": "com.project.swiftaid.composeApp-mergeDebugResources-39:/values-nl/values-nl.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\5cfcb2ed7534f3cd7248452a4c184427\\transformed\\material3\\res\\values-nl\\values-nl.xml",
+                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\987d85348b52ed6fc1b2a2ef6d78e8a3\\transformed\\material3\\res\\values-nl\\values-nl.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -21,24 +21,24 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\8b1a42f4780b80e44e3af1b2c5bfd349\\transformed\\ui\\res\\values-nl\\values-nl.xml",
+                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\916cac9ce983f2b70406f8728daad236\\transformed\\foundation\\res\\values-nl\\values-nl.xml",
                     "from": {
-                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,213,305,388,485,584,669,745,841,928,1017,1098,1181,1258,1344,1419,1491,1562,1646,1716",
-                        "endColumns": "107,91,82,96,98,84,75,95,86,88,80,82,76,85,74,71,70,83,69,119",
-                        "endOffsets": "208,300,383,480,579,664,740,836,923,1012,1093,1176,1253,1339,1414,1486,1557,1641,1711,1831"
+                        "startLines": "2,3,4",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,171,257",
+                        "endColumns": "115,85,85",
+                        "endOffsets": "166,252,338"
                     },
                     "to": {
-                        "startLines": "3,11,12,13,14,15,16,17,86,87,88,89,90,91,92,93,94,96,97,98",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "221,1063,1155,1238,1335,1434,1519,1595,9144,9231,9320,9401,9484,9561,9647,9722,9794,9966,10050,10120",
-                        "endColumns": "107,91,82,96,98,84,75,95,86,88,80,82,76,85,74,71,70,83,69,119",
-                        "endOffsets": "324,1150,1233,1330,1429,1514,1590,1686,9226,9315,9396,9479,9556,9642,9717,9789,9860,10045,10115,10235"
+                        "startLines": "2,99,100",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "105,10240,10326",
+                        "endColumns": "115,85,85",
+                        "endOffsets": "216,10321,10407"
                     }
                 },
                 {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\f7610f4f0243e39614b93e7aafe0b43e\\transformed\\core-1.18.0\\res\\values-nl\\values-nl.xml",
+                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\73a141d19504b2aa2aff579e7d7b02b9\\transformed\\core-1.18.0\\res\\values-nl\\values-nl.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -55,20 +55,20 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\f2714bd748bee48cf82078d7c3c5c5a4\\transformed\\foundation\\res\\values-nl\\values-nl.xml",
+                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\e3509de49b0b0d0946ab23eb0efdd023\\transformed\\ui\\res\\values-nl\\values-nl.xml",
                     "from": {
-                        "startLines": "2,3,4",
-                        "startColumns": "4,4,4",
-                        "startOffsets": "55,171,257",
-                        "endColumns": "115,85,85",
-                        "endOffsets": "166,252,338"
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,213,305,388,485,584,669,745,841,928,1017,1098,1181,1258,1344,1419,1491,1562,1646,1716",
+                        "endColumns": "107,91,82,96,98,84,75,95,86,88,80,82,76,85,74,71,70,83,69,119",
+                        "endOffsets": "208,300,383,480,579,664,740,836,923,1012,1093,1176,1253,1339,1414,1486,1557,1641,1711,1831"
                     },
                     "to": {
-                        "startLines": "2,99,100",
-                        "startColumns": "4,4,4",
-                        "startOffsets": "105,10240,10326",
-                        "endColumns": "115,85,85",
-                        "endOffsets": "216,10321,10407"
+                        "startLines": "3,11,12,13,14,15,16,17,86,87,88,89,90,91,92,93,94,96,97,98",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "221,1063,1155,1238,1335,1434,1519,1595,9144,9231,9320,9401,9484,9561,9647,9722,9794,9966,10050,10120",
+                        "endColumns": "107,91,82,96,98,84,75,95,86,88,80,82,76,85,74,71,70,83,69,119",
+                        "endOffsets": "324,1150,1233,1330,1429,1514,1590,1686,9226,9315,9396,9479,9556,9642,9717,9789,9860,10045,10115,10235"
                     }
                 }
             ]

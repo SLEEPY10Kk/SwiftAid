@@ -29,8 +29,9 @@ fun SignInScreen(
     onSignInClick: () -> Unit = {},
     onSignUpClick: () -> Unit = {}
 ) {
-    var email by remember { mutableStateOf("Loisbecket@gmail.com") }
-    var password by remember { mutableStateOf("1234567") }
+    val t = Translations.get(LocalLanguage.current)
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
 
@@ -54,8 +55,8 @@ fun SignInScreen(
                 .padding(horizontal = 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-            
+            GlobalLanguageSwitcher(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
+
             // Shield Logo
             Icon(
                 imageVector = getSwiftAidIcon(),
@@ -72,7 +73,7 @@ fun SignInScreen(
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
-                    text = "Sign in to your\nAccount",
+                    text = t.signInTitle,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -80,7 +81,7 @@ fun SignInScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Enter your email and password to log in",
+                    text = t.signInSubtitle,
                     fontSize = 14.sp,
                     color = Color.LightGray
                 )
@@ -106,7 +107,7 @@ fun SignInScreen(
                         contentAlignment = Alignment.CenterStart
                     ) {
                         if (email.isEmpty()) {
-                            Text("Email", color = Color.Gray, fontSize = 16.sp)
+                            Text(t.email, color = Color.Gray, fontSize = 16.sp)
                         }
                         innerTextField()
                     }
@@ -138,7 +139,7 @@ fun SignInScreen(
                             contentAlignment = Alignment.CenterStart
                         ) {
                             if (password.isEmpty()) {
-                                Text("Password", color = Color.Gray, fontSize = 16.sp)
+                                Text(t.password, color = Color.Gray, fontSize = 16.sp)
                             }
                             innerTextField()
                         }
@@ -172,7 +173,7 @@ fun SignInScreen(
                         )
                     )
                     Text(
-                        text = "Remember me",
+                        text = t.rememberMe,
                         modifier = Modifier.offset(x = (-8).dp),
                         color = Color.LightGray,
                         fontSize = 14.sp
@@ -180,7 +181,7 @@ fun SignInScreen(
                 }
                 
                 Text(
-                    text = "Forgot Password?",
+                    text = t.forgotPassword,
                     color = Color(0xFF4A7FF5),
                     fontSize = 14.sp,
                     maxLines = 1,
@@ -200,7 +201,7 @@ fun SignInScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF336CFC))
             ) {
                 Text(
-                    text = "Log In",
+                    text = t.loginBtn,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White
@@ -251,7 +252,7 @@ fun SignInScreen(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Continue with Google",
+                    text = t.orContinueWith + " Google",
                     color = Color.Black,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp
@@ -268,12 +269,12 @@ fun SignInScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Don't have an account? ",
+                    text = t.noAccount + " ",
                     color = Color.Gray,
                     fontSize = 14.sp
                 )
                 Text(
-                    text = "Sign Up",
+                    text = t.signUpText,
                     color = Color(0xFF4A7FF5),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,

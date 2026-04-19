@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -34,13 +35,13 @@ import androidx.compose.ui.unit.sp
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Colors — matching the exact design in the photo
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-private val BackgroundDark    = Color(0xFF0B1437)
+private val BackgroundTop     = Color(0xFF283B5A)
+private val BackgroundBottom  = Color(0xFF1E212B)
 private val FieldWhite        = Color(0xFFFFFFFF)
-private val FieldPlaceholder  = Color(0xFF9AA5C0)
-private val FieldText         = Color(0xFF1A1A2E)
+private val FieldText         = Color(0xFF000000)
 private val TitleWhite        = Color(0xFFFFFFFF)
-private val SubtitleColor     = Color(0xFF7A8AB0)
-private val ButtonBlue        = Color(0xFF2563EB)
+private val SubtitleColor     = Color.LightGray
+private val ButtonBlue        = Color(0xFF336CFC)
 private val ReportCardBg      = Color(0xFFF4F7FF)
 private val ReportBorder      = Color(0xFFC5CFE8)
 private val ReportLabelBlue   = Color(0xFF2563EB)
@@ -51,68 +52,7 @@ private val LogoGradientEnd   = Color(0xFF0027A8)
 // Blood group options
 private val bloodGroups = listOf("A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−")
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Logo — drawn via Compose Canvas (no XML resource needed)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-@Composable
-private fun AppLogo(size: Dp = 72.dp, modifier: Modifier = Modifier) {
-    Box(modifier = modifier.size(size).drawBehind { drawLogo() })
-}
-
-private fun DrawScope.drawLogo() {
-    val vb = 1024f
-    val sx = size.width / vb
-    val sy = size.height / vb
-
-    // Gradient background
-    drawRoundRect(
-        brush = Brush.linearGradient(
-            colors = listOf(LogoGradientStart, LogoGradientEnd),
-            start  = Offset(vb * 0.10f * sx, 0f),
-            end    = Offset(vb * 0.90f * sx, vb * sy)
-        ),
-        size         = Size(size.width, size.height),
-        cornerRadius = CornerRadius(200f * sx, 200f * sy)
-    )
-
-    fun s(x: Float) = x * sx
-    fun t(y: Float) = y * sy
-
-    // Main icon body
-    val body = Path().apply {
-        moveTo(s(432f), t(170f))
-        arcTo(Rect(s(432f), t(90f), s(592f), t(250f)), 180f, -180f, false)
-        lineTo(s(592f), t(380f))
-        lineTo(s(760f), t(380f))
-        arcTo(Rect(s(680f), t(380f), s(840f), t(540f)), 270f, 180f, false)
-        lineTo(s(592f), t(540f))
-        lineTo(s(800f), t(830f))
-        arcTo(Rect(s(740f), t(800f), s(800f), t(860f)), 0f, 90f, false)
-        lineTo(s(254f), t(860f))
-        arcTo(Rect(s(224f), t(800f), s(284f), t(860f)), 90f, 90f, false)
-        lineTo(s(432f), t(540f))
-        lineTo(s(264f), t(540f))
-        arcTo(Rect(s(184f), t(380f), s(344f), t(540f)), 90f, 180f, false)
-        lineTo(s(432f), t(380f))
-        close()
-    }
-    drawPath(body, Color.White, style = Fill)
-
-    // Three tapering stripes
-    listOf(
-        listOf(488f to 570f, 536f to 570f, 542f to 640f, 482f to 640f),
-        listOf(478f to 680f, 546f to 680f, 554f to 760f, 470f to 760f),
-        listOf(464f to 800f, 560f to 800f, 570f to 860f, 454f to 860f)
-    ).forEach { pts ->
-        drawPath(Path().apply {
-            moveTo(s(pts[0].first), t(pts[0].second))
-            pts.drop(1).forEach { lineTo(s(it.first), t(it.second)) }
-            close()
-        }, Color.White, style = Fill)
-    }
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Removed AppLogo and drawLogo here because they are exported from UserInfo.kt
 // Screen
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,29 +62,32 @@ fun MedicalInfoScreen(
         bloodGroup: String,
         allergies: String,
         chronicConditions: String,
-        reportUri: Uri?
-    ) -> Unit = { _, _, _, _ -> }
+        reportAdded: Boolean
+    ) -> Unit = { _, _, _, _ -> },
+    onBack: () -> Unit = {}
 ) {
-    var bloodGroup        by remember { mutableStateOf("") }
+    val t = Translations.get(LocalLanguage.current)
+    val s = LocalSharedState.current
+
     var bloodGroupExpanded by remember { mutableStateOf(false) }
-    var allergies          by remember { mutableStateOf("") }
-    var chronicConditions  by remember { mutableStateOf("") }
-    var reportUri          by remember { mutableStateOf<Uri?>(null) }
-    var reportName         by remember { mutableStateOf("") }
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            reportUri  = it
-            reportName = it.lastPathSegment ?: "Report uploaded"
+            s.reportUri  = it
+            s.isReportAdded = true
         }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(BackgroundTop, BackgroundBottom, BackgroundBottom)
+                )
+            )
     ) {
         Column(
             modifier = Modifier
@@ -153,54 +96,32 @@ fun MedicalInfoScreen(
                 .padding(horizontal = 24.dp, vertical = 36.dp),
             horizontalAlignment = Alignment.Start
         ) {
+            GlobalLanguageSwitcher(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
 
-            // Language selector
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = null,
-                    tint = SubtitleColor,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(Modifier.width(4.dp))
-                Text("English", color = SubtitleColor, fontSize = 13.sp)
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                    tint = SubtitleColor,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Logo
-            AppLogo(
-                size = 72.dp,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+            Icon(
+                imageVector = getSwiftAidIcon(),
+                contentDescription = null,
+                tint = Color.Unspecified,
+                modifier = Modifier.size(56.dp).align(Alignment.CenterHorizontally)
             )
 
             Spacer(Modifier.height(20.dp))
 
             // Heading
             Text(
-                text = "Medical\nInformation",
+                text = t.medicalInfoTitle,
                 color = TitleWhite,
-                fontSize = 28.sp,
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                lineHeight = 34.sp
+                lineHeight = 40.sp
             )
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
 
             Text(
-                text = "Fill in your health details below",
+                text = t.medicalInfoSubtitle,
                 color = SubtitleColor,
-                fontSize = 13.sp
+                fontSize = 14.sp
             )
 
             Spacer(Modifier.height(24.dp))
@@ -210,33 +131,38 @@ fun MedicalInfoScreen(
                 expanded = bloodGroupExpanded,
                 onExpandedChange = { bloodGroupExpanded = it }
             ) {
-                OutlinedTextField(
-                    value = bloodGroup,
+                BasicTextField(
+                    value = s.bloodGroup,
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    textStyle = LocalTextStyle.current.copy(color = FieldText),
-                    placeholder = {
-                        Text("Blood Group", color = FieldPlaceholder, fontSize = 14.sp)
-                    },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Favorite,
-                            contentDescription = null,
-                            tint = FieldPlaceholder,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = bloodGroupExpanded)
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ButtonBlue,
-                        unfocusedBorderColor = Color.Transparent,
-                        cursorColor = ButtonBlue
-                    )
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .background(FieldWhite, RoundedCornerShape(12.dp))
+                        .menuAnchor(),
+                    textStyle = LocalTextStyle.current.copy(color = FieldText, fontSize = 16.sp),
+                    singleLine = true,
+                    decorationBox = { innerTextField ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Favorite, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (s.bloodGroup.isEmpty()) {
+                                    Text(t.bloodGroup, color = Color.Gray, fontSize = 16.sp)
+                                }
+                                innerTextField()
+                            }
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = bloodGroupExpanded)
+                        }
+                    }
                 )
                 ExposedDropdownMenu(
                     expanded = bloodGroupExpanded,
@@ -246,7 +172,7 @@ fun MedicalInfoScreen(
                         DropdownMenuItem(
                             text = { Text(group, fontSize = 14.sp) },
                             onClick = {
-                                bloodGroup = group
+                                s.bloodGroup = group
                                 bloodGroupExpanded = false
                             }
                         )
@@ -256,69 +182,69 @@ fun MedicalInfoScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── 2. Allergies (optional) ───────────────────────────────────
-            OutlinedTextField(
-                value = allergies,
-                onValueChange = { allergies = it },
-                modifier = Modifier.fillMaxWidth().background(FieldWhite, RoundedCornerShape(16.dp)),
-                textStyle = LocalTextStyle.current.copy(color = FieldText),
-                placeholder = {
-                    Text("Allergies (optional)", color = FieldPlaceholder, fontSize = 14.sp)
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = FieldPlaceholder,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                trailingIcon = {
-                    Text(
-                        "Optional",
-                        color = OptionalGray,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                },
+            BasicTextField(
+                value = s.allergies,
+                onValueChange = { s.allergies = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .background(FieldWhite, RoundedCornerShape(12.dp)),
+                textStyle = LocalTextStyle.current.copy(color = FieldText, fontSize = 16.sp),
                 singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ButtonBlue,
-                    unfocusedBorderColor = Color.Transparent,
-                    cursorColor = ButtonBlue
-                )
+                decorationBox = { innerTextField ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (s.allergies.isEmpty()) {
+                                Text(t.allergies, color = Color.Gray, fontSize = 16.sp)
+                            }
+                            innerTextField()
+                        }
+                        Text(t.optional, color = Color.Gray, fontSize = 12.sp)
+                    }
+                }
             )
 
             Spacer(Modifier.height(12.dp))
 
-            // ── 3. Chronic Conditions ─────────────────────────────────────
-            OutlinedTextField(
-                value = chronicConditions,
-                onValueChange = { chronicConditions = it },
+            BasicTextField(
+                value = s.chronicConditions,
+                onValueChange = { s.chronicConditions = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 100.dp)
-                    .background(FieldWhite, RoundedCornerShape(16.dp)),
-                textStyle = LocalTextStyle.current.copy(color = FieldText),
-                placeholder = {
-                    Text("Chronic Conditions", color = FieldPlaceholder, fontSize = 14.sp)
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Favorite,
-                        contentDescription = null,
-                        tint = FieldPlaceholder,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
+                    .background(FieldWhite, RoundedCornerShape(12.dp)),
+                textStyle = LocalTextStyle.current.copy(color = FieldText, fontSize = 16.sp),
                 maxLines = 4,
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ButtonBlue,
-                    unfocusedBorderColor = Color.Transparent,
-                    cursorColor = ButtonBlue
-                )
+                decorationBox = { innerTextField ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(Icons.Default.Favorite, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.TopStart
+                        ) {
+                            if (s.chronicConditions.isEmpty()) {
+                                Text(t.chronicConditions, color = Color.Gray, fontSize = 16.sp)
+                            }
+                            innerTextField()
+                        }
+                    }
+                }
             )
 
             Spacer(Modifier.height(12.dp))
@@ -344,7 +270,7 @@ fun MedicalInfoScreen(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "CURRENT MEDICAL REPORT",
+                        text = t.currentReport,
                         color = ReportLabelBlue,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -352,7 +278,7 @@ fun MedicalInfoScreen(
                     )
                     Spacer(Modifier.weight(1f))
                     Text(
-                        text = "Optional",
+                        text = t.optional,
                         color = OptionalGray,
                         fontSize = 11.sp
                     )
@@ -380,47 +306,65 @@ fun MedicalInfoScreen(
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = if (reportName.isEmpty()) "Tap to upload report" else reportName,
-                            color = if (reportName.isEmpty()) Color(0xFF5A6A8A) else ButtonBlue,
-                            fontSize = 12.5.sp,
+                            text = if (s.isReportAdded) "Health_Report.pdf" else t.tapToUpload,
+                            color = if (s.isReportAdded) ReportLabelBlue else Color.Gray,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
-                        if (reportName.isEmpty()) {
-                            Spacer(Modifier.height(3.dp))
-                            Text(
-                                text = "PDF, JPG, PNG supported",
-                                color = OptionalGray,
-                                fontSize = 11.sp
-                            )
-                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = t.supportedFormats,
+                            color = Color.Gray,
+                            fontSize = 11.sp
+                        )
                     }
                 }
             }
 
             Spacer(Modifier.height(24.dp))
 
-            // ── Save & Continue Button ────────────────────────────────────
-            Button(
-                onClick = {
-                    onSaveAndContinue(
-                        bloodGroup,
-                        allergies,
-                        chronicConditions,
-                        reportUri
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = ButtonBlue)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "Save & Continue",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                OutlinedButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, ButtonBlue)
+                ) {
+                    Text(
+                        text = t.backBtn,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        onSaveAndContinue(
+                            s.bloodGroup,
+                            s.allergies,
+                            s.chronicConditions,
+                            s.isReportAdded
+                        )
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = ButtonBlue)
+                ) {
+                    Text(
+                        text = t.nextBtn,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
             }
         }
     }
