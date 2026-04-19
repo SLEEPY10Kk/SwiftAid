@@ -22,7 +22,19 @@ import myapplication.composeapp.generated.resources.compose_multiplatform
 @Composable
 @Preview
 fun App() {
+    var currentScreen by remember { mutableStateOf("SignIn") }
+
     MaterialTheme {
-        SignInScreen()
+        when (currentScreen) {
+            "SignIn" -> SignInScreen(
+                onSignInClick = { currentScreen = "MedicalInfo" },
+                onSignUpClick = { currentScreen = "MedicalInfo" }
+            )
+            "MedicalInfo" -> MedicalInfoScreen(
+                onSaveAndContinue = { _, _, _, _ ->
+                    currentScreen = "SignIn"
+                }
+            )
+        }
     }
 }

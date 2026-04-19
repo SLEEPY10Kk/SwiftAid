@@ -25,7 +25,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
-fun SignInScreen() {
+fun SignInScreen(
+    onSignInClick: () -> Unit = {},
+    onSignUpClick: () -> Unit = {}
+) {
     var email by remember { mutableStateOf("Loisbecket@gmail.com") }
     var password by remember { mutableStateOf("1234567") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -189,7 +192,7 @@ fun SignInScreen() {
             
             // Log In Button
             Button(
-                onClick = { },
+                onClick = onSignInClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -274,7 +277,7 @@ fun SignInScreen() {
                     color = Color(0xFF4A7FF5),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { }
+                    modifier = Modifier.clickable { onSignUpClick() }
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
