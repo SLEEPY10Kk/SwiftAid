@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:2:1-22:12
-INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:2:1-22:12
-INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:2:1-22:12
-INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:2:1-22:12
+ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:2:1-22:12
+INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:2:1-22:12
+INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:2:1-22:12
+INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:2:1-22:12
 MERGED from [org.jetbrains.compose.components:components-resources-android:1.10.3] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\7a02b7032b9723ce5fb705c0de956a3c\transformed\library-release\AndroidManifest.xml:2:1-16:12
 MERGED from [androidx.compose.material3:material3-android:1.5.0-alpha08] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\5cfcb2ed7534f3cd7248452a4c184427\transformed\material3\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.compose.material:material:1.0.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\42e5467e0b6b45bc142c6c578da0960c\transformed\material-1.0.0\AndroidManifest.xml:17:1-24:12
@@ -60,7 +60,7 @@ MERGED from [androidx.compose.ui:ui-android:1.10.5] C:\Users\dhruv\.gradle\cache
 MERGED from [androidx.activity:activity-ktx:1.13.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\073697297c7d08a8a2c7a19f6847d2f6\transformed\activity-ktx-1.13.0\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.activity:activity:1.13.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\5fa10a1d87e8c45b510e8b9be99b652f\transformed\activity-1.13.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.activity:activity-compose:1.13.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\3de63e6d07d1e9e4ab7c0e0b511f270e\transformed\activity-compose-1.13.0\AndroidManifest.xml:2:1-7:12
-MERGED from [:shared] C:\Users\dhruv\AndroidStudioProjects\MyApplication\shared\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:2:1-7:12
+MERGED from [:shared] C:\Users\dhruv\AndroidStudioProjects\SwiftAid\shared\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\9097b66972a9c27e1cd92e381e891a5f\transformed\profileinstaller-1.4.0\AndroidManifest.xml:17:1-55:12
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\19db21325b8abb2f89bda4c6ff3bcec2\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:17:1-27:12
 MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\805b86ed5da2c849adfc6af7982aa36b\transformed\startup-runtime-1.1.1\AndroidManifest.xml:17:1-33:12
@@ -73,16 +73,16 @@ MERGED from [androidx.print:print:1.0.0] C:\Users\dhruv\.gradle\caches\8.14.3\tr
 MERGED from [androidx.core:core-viewtree:1.0.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\dcecdbd3e77f3000aa30d075d40f69b3\transformed\core-viewtree-1.0.0\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.annotation:annotation-experimental:1.4.1] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\7249469b4c3eef7533ace67d708cca20\transformed\annotation-experimental-1.4.1\AndroidManifest.xml:2:1-7:12
 	package
-		INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml
+		INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml
 	android:versionName
-		INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml
+		INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml
 	android:versionCode
-		INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml
+		INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml
 	xmlns:android
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:2:11-69
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:2:11-69
 application
-ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:4:5-20:19
-INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:4:5-20:19
+ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:4:5-20:19
+INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:4:5-20:19
 MERGED from [org.jetbrains.compose.components:components-resources-android:1.10.3] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\7a02b7032b9723ce5fb705c0de956a3c\transformed\library-release\AndroidManifest.xml:7:5-14:19
 MERGED from [org.jetbrains.compose.components:components-resources-android:1.10.3] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\7a02b7032b9723ce5fb705c0de956a3c\transformed\library-release\AndroidManifest.xml:7:5-14:19
 MERGED from [androidx.compose.ui:ui-tooling-android:1.10.5] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\7c61e5c843e2d2b8352b04405c2fb90c\transformed\ui-tooling\AndroidManifest.xml:22:5-26:19
@@ -102,41 +102,41 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\dh
 MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\805b86ed5da2c849adfc6af7982aa36b\transformed\startup-runtime-1.1.1\AndroidManifest.xml:25:5-31:19
 MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\805b86ed5da2c849adfc6af7982aa36b\transformed\startup-runtime-1.1.1\AndroidManifest.xml:25:5-31:19
 	android:extractNativeLibs
-		INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml
+		INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.18.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\f7610f4f0243e39614b93e7aafe0b43e\transformed\core-1.18.0\AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:9:9-35
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:9:9-35
 	android:label
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:7:9-41
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:7:9-41
 	android:roundIcon
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:8:9-54
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:8:9-54
 	android:icon
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:6:9-43
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:6:9-43
 	android:allowBackup
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:5:9-35
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:5:9-35
 	android:theme
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:10:9-72
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:10:9-72
 activity#com.project.swiftaid.MainActivity
-ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:11:9-19:20
+ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:11:9-19:20
 	android:exported
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:12:13-36
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:12:13-36
 	android:name
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:13:13-41
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:13:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:14:13-18:29
+ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:14:13-18:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:15:17-69
+ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:15:17-69
 	android:name
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:15:25-66
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:15:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:17:17-77
+ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:17:17-77
 	android:name
-		ADDED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml:17:27-74
+		ADDED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml:17:27-74
 uses-sdk
-INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml reason: use-sdk injection requested
-INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml
-INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml
+INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml
+INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml
 MERGED from [org.jetbrains.compose.components:components-resources-android:1.10.3] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\7a02b7032b9723ce5fb705c0de956a3c\transformed\library-release\AndroidManifest.xml:5:5-44
 MERGED from [org.jetbrains.compose.components:components-resources-android:1.10.3] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\7a02b7032b9723ce5fb705c0de956a3c\transformed\library-release\AndroidManifest.xml:5:5-44
 MERGED from [androidx.compose.material3:material3-android:1.5.0-alpha08] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\5cfcb2ed7534f3cd7248452a4c184427\transformed\material3\AndroidManifest.xml:20:5-44
@@ -249,8 +249,8 @@ MERGED from [androidx.activity:activity:1.13.0] C:\Users\dhruv\.gradle\caches\8.
 MERGED from [androidx.activity:activity:1.13.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\5fa10a1d87e8c45b510e8b9be99b652f\transformed\activity-1.13.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.activity:activity-compose:1.13.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\3de63e6d07d1e9e4ab7c0e0b511f270e\transformed\activity-compose-1.13.0\AndroidManifest.xml:5:5-44
 MERGED from [androidx.activity:activity-compose:1.13.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\3de63e6d07d1e9e4ab7c0e0b511f270e\transformed\activity-compose-1.13.0\AndroidManifest.xml:5:5-44
-MERGED from [:shared] C:\Users\dhruv\AndroidStudioProjects\MyApplication\shared\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
-MERGED from [:shared] C:\Users\dhruv\AndroidStudioProjects\MyApplication\shared\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:shared] C:\Users\dhruv\AndroidStudioProjects\SwiftAid\shared\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:shared] C:\Users\dhruv\AndroidStudioProjects\SwiftAid\shared\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
 MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\9097b66972a9c27e1cd92e381e891a5f\transformed\profileinstaller-1.4.0\AndroidManifest.xml:21:5-44
 MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\9097b66972a9c27e1cd92e381e891a5f\transformed\profileinstaller-1.4.0\AndroidManifest.xml:21:5-44
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\19db21325b8abb2f89bda4c6ff3bcec2\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
@@ -274,9 +274,9 @@ MERGED from [androidx.core:core-viewtree:1.0.0] C:\Users\dhruv\.gradle\caches\8.
 MERGED from [androidx.annotation:annotation-experimental:1.4.1] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\7249469b4c3eef7533ace67d708cca20\transformed\annotation-experimental-1.4.1\AndroidManifest.xml:5:5-44
 MERGED from [androidx.annotation:annotation-experimental:1.4.1] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\7249469b4c3eef7533ace67d708cca20\transformed\annotation-experimental-1.4.1\AndroidManifest.xml:5:5-44
 	android:targetSdkVersion
-		INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml
+		INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml
 	android:minSdkVersion
-		INJECTED from C:\Users\dhruv\AndroidStudioProjects\MyApplication\composeApp\src\androidMain\AndroidManifest.xml
+		INJECTED from C:\Users\dhruv\AndroidStudioProjects\SwiftAid\composeApp\src\androidMain\AndroidManifest.xml
 provider#org.jetbrains.compose.resources.AndroidContextProvider
 ADDED from [org.jetbrains.compose.components:components-resources-android:1.10.3] C:\Users\dhruv\.gradle\caches\8.14.3\transforms\7a02b7032b9723ce5fb705c0de956a3c\transformed\library-release\AndroidManifest.xml:8:9-13:20
 	android:enabled
