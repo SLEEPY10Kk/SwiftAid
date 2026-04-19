@@ -27,8 +27,13 @@ fun App() {
     MaterialTheme {
         when (currentScreen) {
             "SignIn" -> SignInScreen(
-                onSignInClick = { currentScreen = "MedicalInfo" },
-                onSignUpClick = { currentScreen = "MedicalInfo" }
+                onSignInClick = { },
+                onSignUpClick = { currentScreen = "UserInfo" }
+            )
+            "UserInfo" -> CreateAccountScreen(
+                onCreateAccount = { _, _, _, _, _, _, _, _ ->
+                    currentScreen = "MedicalInfo"
+                }
             )
             "MedicalInfo" -> MedicalInfoScreen(
                 onSaveAndContinue = { _, _, _, _ ->

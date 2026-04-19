@@ -11,7 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -161,7 +161,7 @@ fun MedicalInfoScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Language,
+                    imageVector = Icons.Default.Info,
                     contentDescription = null,
                     tint = SubtitleColor,
                     modifier = Modifier.size(16.dp)
@@ -169,7 +169,7 @@ fun MedicalInfoScreen(
                 Spacer(Modifier.width(4.dp))
                 Text("English", color = SubtitleColor, fontSize = 13.sp)
                 Icon(
-                    imageVector = Icons.Outlined.ArrowDropDown,
+                    imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = null,
                     tint = SubtitleColor,
                     modifier = Modifier.size(16.dp)
@@ -215,14 +215,14 @@ fun MedicalInfoScreen(
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
+                        .fillMaxWidth(),
+                    textStyle = LocalTextStyle.current.copy(color = FieldText),
                     placeholder = {
                         Text("Blood Group", color = FieldPlaceholder, fontSize = 14.sp)
                     },
                     leadingIcon = {
                         Icon(
-                            Icons.Outlined.Favorite,
+                            Icons.Default.Favorite,
                             contentDescription = null,
                             tint = FieldPlaceholder,
                             modifier = Modifier.size(18.dp)
@@ -232,7 +232,11 @@ fun MedicalInfoScreen(
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = bloodGroupExpanded)
                     },
                     shape = RoundedCornerShape(16.dp),
-                    colors = whiteFieldColors()
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ButtonBlue,
+                        unfocusedBorderColor = Color.Transparent,
+                        cursorColor = ButtonBlue
+                    )
                 )
                 ExposedDropdownMenu(
                     expanded = bloodGroupExpanded,
@@ -256,13 +260,14 @@ fun MedicalInfoScreen(
             OutlinedTextField(
                 value = allergies,
                 onValueChange = { allergies = it },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().background(FieldWhite, RoundedCornerShape(16.dp)),
+                textStyle = LocalTextStyle.current.copy(color = FieldText),
                 placeholder = {
                     Text("Allergies (optional)", color = FieldPlaceholder, fontSize = 14.sp)
                 },
                 leadingIcon = {
                     Icon(
-                        Icons.Outlined.Warning,
+                        Icons.Default.Warning,
                         contentDescription = null,
                         tint = FieldPlaceholder,
                         modifier = Modifier.size(18.dp)
@@ -278,7 +283,11 @@ fun MedicalInfoScreen(
                 },
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
-                colors = whiteFieldColors()
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = ButtonBlue,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = ButtonBlue
+                )
             )
 
             Spacer(Modifier.height(12.dp))
@@ -289,13 +298,15 @@ fun MedicalInfoScreen(
                 onValueChange = { chronicConditions = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 100.dp),
+                    .heightIn(min = 100.dp)
+                    .background(FieldWhite, RoundedCornerShape(16.dp)),
+                textStyle = LocalTextStyle.current.copy(color = FieldText),
                 placeholder = {
                     Text("Chronic Conditions", color = FieldPlaceholder, fontSize = 14.sp)
                 },
                 leadingIcon = {
                     Icon(
-                        Icons.Outlined.MonitorHeart,
+                        Icons.Default.Favorite,
                         contentDescription = null,
                         tint = FieldPlaceholder,
                         modifier = Modifier.size(18.dp)
@@ -303,7 +314,11 @@ fun MedicalInfoScreen(
                 },
                 maxLines = 4,
                 shape = RoundedCornerShape(16.dp),
-                colors = whiteFieldColors()
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = ButtonBlue,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = ButtonBlue
+                )
             )
 
             Spacer(Modifier.height(12.dp))
@@ -322,7 +337,7 @@ fun MedicalInfoScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
-                        Icons.Outlined.Description,
+                        Icons.Default.Info,
                         contentDescription = null,
                         tint = ReportLabelBlue,
                         modifier = Modifier.size(15.dp)
@@ -358,7 +373,7 @@ fun MedicalInfoScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            imageVector = Icons.Outlined.UploadFile,
+                            imageVector = Icons.Default.Add,
                             contentDescription = null,
                             tint = ButtonBlue,
                             modifier = Modifier.size(32.dp)
@@ -410,20 +425,6 @@ fun MedicalInfoScreen(
         }
     }
 }
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Color Helper — white field style matching the photo
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-@Composable
-private fun whiteFieldColors() = OutlinedTextFieldDefaults.colors(
-    unfocusedContainerColor  = FieldWhite,
-    focusedContainerColor    = FieldWhite,
-    unfocusedBorderColor     = Color.Transparent,
-    focusedBorderColor       = ButtonBlue,
-    unfocusedTextColor       = FieldText,
-    focusedTextColor         = FieldText,
-    cursorColor              = ButtonBlue
-)
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Preview

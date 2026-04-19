@@ -1,9 +1,5 @@
-package com.example.user
+package com.project.swiftaid
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -12,7 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +23,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.tooling.preview.Preview
@@ -77,7 +72,7 @@ fun LanguageSwitcher(onLanguageChange: (String) -> Unit) {
     Box(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), contentAlignment = Alignment.TopEnd) {
         TextButton(onClick = { expanded = true }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Language, contentDescription = null, modifier = Modifier.size(18.dp), tint = TextSecondary)
+                Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(18.dp), tint = TextSecondary)
                 Spacer(Modifier.width(6.dp))
                 Text(
                     text = currentLanguage.name,
@@ -85,7 +80,7 @@ fun LanguageSwitcher(onLanguageChange: (String) -> Unit) {
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
-                Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = TextSecondary)
+                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = TextSecondary)
             }
         }
         DropdownMenu(
@@ -101,37 +96,6 @@ fun LanguageSwitcher(onLanguageChange: (String) -> Unit) {
                         expanded = false
                     }
                 )
-            }
-        }
-    }
-}
-
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            val context = LocalContext.current
-            val prefs = remember { context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE) }
-            var localeCode by remember { 
-                mutableStateOf(prefs.getString("lang", Locale.getDefault().language) ?: "en") 
-            }
-            
-            // Create a localized context that forces the UI to use the specific language
-            val localizedContext = remember(localeCode) {
-                val locale = Locale(localeCode)
-                Locale.setDefault(locale)
-                val config = android.content.res.Configuration(context.resources.configuration)
-                config.setLocale(locale)
-                context.createConfigurationContext(config)
-            }
-
-            // Wrapping with CompositionLocalProvider ensures the ENTIRE page respects the new context
-            CompositionLocalProvider(LocalContext provides localizedContext) {
-                CreateAccountScreen(onLanguageChange = { newLang ->
-                    localeCode = newLang
-                    prefs.edit().putString("lang", newLang).apply()
-                })
             }
         }
     }
@@ -321,7 +285,7 @@ fun CreateAccountScreen(
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = stringResource(R.string.create_account_title),
+                text = "Create Account",
                 color = TextPrimary,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
@@ -331,7 +295,7 @@ fun CreateAccountScreen(
             Spacer(Modifier.height(12.dp))
 
             Text(
-                text = stringResource(R.string.subtitle),
+                text = "Fill in your details below",
                 color = TextSecondary,
                 fontSize = 14.sp
             )
@@ -341,24 +305,24 @@ fun CreateAccountScreen(
             FormField(
                 value = username,
                 onValueChange = { username = it },
-                placeholder = stringResource(R.string.username),
-                leadingIcon = Icons.Outlined.Person
+                placeholder = "Username",
+                leadingIcon = Icons.Default.Person
             )
             Spacer(Modifier.height(12.dp))
 
             FormField(
                 value = fullName,
                 onValueChange = { fullName = it },
-                placeholder = stringResource(R.string.full_name),
-                leadingIcon = Icons.Outlined.AccountCircle
+                placeholder = "Full Name",
+                leadingIcon = Icons.Default.AccountCircle
             )
             Spacer(Modifier.height(12.dp))
 
             FormField(
                 value = phone,
                 onValueChange = { phone = it },
-                placeholder = stringResource(R.string.phone_number),
-                leadingIcon = Icons.Outlined.Phone,
+                placeholder = "Phone Number",
+                leadingIcon = Icons.Default.Phone,
                 keyboardType = KeyboardType.Phone
             )
             Spacer(Modifier.height(12.dp))
@@ -366,7 +330,7 @@ fun CreateAccountScreen(
             PasswordField(
                 value = password,
                 onValueChange = { password = it },
-                placeholder = stringResource(R.string.password),
+                placeholder = "Password",
                 showPassword = showPass,
                 onToggleVisibility = { showPass = !showPass }
             )
@@ -399,7 +363,7 @@ fun CreateAccountScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
                 Text(
-                    text = stringResource(R.string.create_account_btn),
+                    text = "Next",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -422,15 +386,15 @@ fun FormField(
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().background(Color.Transparent, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
         shadowElevation = 2.dp
     ) {
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(16.dp)),
+            textStyle = LocalTextStyle.current.copy(color = InputTextColor),
             placeholder = { Text(placeholder, color = TextMuted, fontSize = 14.sp) },
             leadingIcon = {
                 Icon(leadingIcon, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
@@ -452,23 +416,23 @@ fun PasswordField(
     onToggleVisibility: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().background(Color.Transparent, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
         shadowElevation = 2.dp
     ) {
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(16.dp)),
+            textStyle = LocalTextStyle.current.copy(color = InputTextColor),
             placeholder = { Text(placeholder, color = TextMuted, fontSize = 14.sp) },
             leadingIcon = {
-                Icon(Icons.Outlined.Lock, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Lock, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
             },
             trailingIcon = {
                 IconButton(onClick = onToggleVisibility) {
                     Icon(
-                        imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                        imageVector = if (showPassword) Icons.Default.Check else Icons.Default.Edit,
                         contentDescription = null,
                         tint = TextMuted,
                         modifier = Modifier.size(18.dp)
@@ -500,29 +464,30 @@ fun AddressSection(
             .padding(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(15.dp))
+            Icon(Icons.Default.LocationOn, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(15.dp))
             Spacer(Modifier.width(6.dp))
-            Text(stringResource(R.string.address_label), color = PrimaryBlue, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.6.sp)
+            Text("ADDRESS", color = PrimaryBlue, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.6.sp)
         }
 
         Spacer(Modifier.height(12.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            SubField(value = city,  onValueChange = onCityChange,  placeholder = stringResource(R.string.city),  modifier = Modifier.weight(1f))
-            SubField(value = state, onValueChange = onStateChange, placeholder = stringResource(R.string.state), modifier = Modifier.weight(1f))
+            SubField(value = city,  onValueChange = onCityChange,  placeholder = "City",  modifier = Modifier.weight(1f))
+            SubField(value = state, onValueChange = onStateChange, placeholder = "State", modifier = Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(9.dp))
 
-        SubField(value = country, onValueChange = onCountryChange, placeholder = stringResource(R.string.country), modifier = Modifier.fillMaxWidth())
+        SubField(value = country, onValueChange = onCountryChange, placeholder = "Country", modifier = Modifier.fillMaxWidth())
 
         Spacer(Modifier.height(9.dp))
 
         OutlinedTextField(
             value = exactArea,
             onValueChange = onExactAreaChange,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 90.dp),
-            placeholder = { Text(stringResource(R.string.address_hint), color = TextMuted, fontSize = 13.sp) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 90.dp).background(Color(0xFFF1F5F9), RoundedCornerShape(10.dp)),
+            textStyle = LocalTextStyle.current.copy(color = InputTextColor),
+            placeholder = { Text("Exact Location / Area", color = TextMuted, fontSize = 13.sp) },
             maxLines = 4,
             shape = RoundedCornerShape(10.dp),
             colors = subFieldColors()
@@ -540,7 +505,8 @@ fun SubField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier,
+        modifier = modifier.background(Color(0xFFF1F5F9), RoundedCornerShape(10.dp)),
+        textStyle = LocalTextStyle.current.copy(color = InputTextColor),
         placeholder = { Text(placeholder, color = TextMuted, fontSize = 13.sp) },
         singleLine = true,
         shape = RoundedCornerShape(10.dp),
@@ -553,23 +519,19 @@ fun SubField(
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 @Composable
 fun outlinedFieldColors() = OutlinedTextFieldDefaults.colors(
-    unfocusedContainerColor = Color.White,
-    focusedContainerColor   = Color.White,
+    unfocusedContainerColor = Color.Transparent,
+    focusedContainerColor   = Color.Transparent,
     unfocusedBorderColor    = Color.Transparent,
     focusedBorderColor      = Color.Transparent,
-    unfocusedTextColor      = InputTextColor,
-    focusedTextColor        = InputTextColor,
     cursorColor             = PrimaryBlue
 )
 
 @Composable
 fun subFieldColors() = OutlinedTextFieldDefaults.colors(
-    unfocusedContainerColor = Color(0xFFF1F5F9),
-    focusedContainerColor   = Color(0xFFF1F5F9),
+    unfocusedContainerColor = Color.Transparent,
+    focusedContainerColor   = Color.Transparent,
     unfocusedBorderColor    = Color.Transparent,
     focusedBorderColor      = Color.Transparent,
-    unfocusedTextColor      = InputTextColor,
-    focusedTextColor        = InputTextColor,
     cursorColor             = PrimaryBlue
 )
 
