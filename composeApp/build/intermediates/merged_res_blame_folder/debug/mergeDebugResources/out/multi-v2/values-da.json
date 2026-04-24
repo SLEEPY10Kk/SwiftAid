@@ -1,10 +1,27 @@
 {
     "logs": [
         {
-            "outputFile": "com.project.swiftaid.composeApp-mergeDebugResources-39:/values-da/values-da.xml",
+            "outputFile": "com.project.swiftaid.composeApp-mergeDebugResources-2:/values-da/values-da.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\43071b7ba909cec4a2c6351ba2971cc4\\transformed\\foundation\\res\\values-da\\values-da.xml",
+                    "source": "C:\\Users\\Divy\\Downloads\\divy\\caches\\8.14.3\\transforms\\efdc8ddffee609d9065f4dfbc6841cc3\\transformed\\core-1.18.0\\res\\values-da\\values-da.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,151,253,350,448,555,664,782",
+                        "endColumns": "95,101,96,97,106,108,117,100",
+                        "endOffsets": "146,248,345,443,550,659,777,878"
+                    },
+                    "to": {
+                        "startLines": "4,5,6,7,8,9,10,95",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "305,401,503,600,698,805,914,9691",
+                        "endColumns": "95,101,96,97,106,108,117,100",
+                        "endOffsets": "396,498,595,693,800,909,1027,9787"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\Divy\\Downloads\\divy\\caches\\8.14.3\\transforms\\43071b7ba909cec4a2c6351ba2971cc4\\transformed\\foundation\\res\\values-da\\values-da.xml",
                     "from": {
                         "startLines": "2,3,4",
                         "startColumns": "4,4,4",
@@ -21,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\f527b461faea3b6d79b93d2fe230739b\\transformed\\ui\\res\\values-da\\values-da.xml",
+                    "source": "C:\\Users\\Divy\\Downloads\\divy\\caches\\8.14.3\\transforms\\f527b461faea3b6d79b93d2fe230739b\\transformed\\ui\\res\\values-da\\values-da.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -38,7 +55,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\313613fe34b04f2c0f0ce434554554e4\\transformed\\material3\\res\\values-da\\values-da.xml",
+                    "source": "C:\\Users\\Divy\\Downloads\\divy\\caches\\8.14.3\\transforms\\313613fe34b04f2c0f0ce434554554e4\\transformed\\material3\\res\\values-da\\values-da.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -52,23 +69,6 @@
                         "startOffsets": "1646,1762,1875,1982,2096,2196,2305,2400,2512,2656,2778,2927,3011,3111,3200,3294,3408,3526,3631,3756,3876,4012,4185,4315,4432,4554,4673,4763,4861,4980,5116,5214,5332,5434,5560,5693,5798,5896,5976,6069,6162,6276,6385,6492,6605,6689,6772,6867,6968,7069,7149,7251,7335,7436,7535,7630,7730,7817,7922,8024,8129,8246,8326,8451,8559,8661,8760,8865",
                         "endColumns": "115,112,106,113,99,108,94,111,143,121,148,83,99,88,93,113,117,104,124,119,135,172,129,116,121,118,89,97,118,135,97,117,101,125,132,104,97,79,92,92,113,108,106,112,83,82,94,100,100,79,101,83,100,98,94,99,86,104,101,104,116,79,124,107,101,98,104,111",
                         "endOffsets": "1757,1870,1977,2091,2191,2300,2395,2507,2651,2773,2922,3006,3106,3195,3289,3403,3521,3626,3751,3871,4007,4180,4310,4427,4549,4668,4758,4856,4975,5111,5209,5327,5429,5555,5688,5793,5891,5971,6064,6157,6271,6380,6487,6600,6684,6767,6862,6963,7064,7144,7246,7330,7431,7530,7625,7725,7812,7917,8019,8124,8241,8321,8446,8554,8656,8755,8860,8972"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\efdc8ddffee609d9065f4dfbc6841cc3\\transformed\\core-1.18.0\\res\\values-da\\values-da.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,151,253,350,448,555,664,782",
-                        "endColumns": "95,101,96,97,106,108,117,100",
-                        "endOffsets": "146,248,345,443,550,659,777,878"
-                    },
-                    "to": {
-                        "startLines": "4,5,6,7,8,9,10,95",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "305,401,503,600,698,805,914,9691",
-                        "endColumns": "95,101,96,97,106,108,117,100",
-                        "endOffsets": "396,498,595,693,800,909,1027,9787"
                     }
                 }
             ]

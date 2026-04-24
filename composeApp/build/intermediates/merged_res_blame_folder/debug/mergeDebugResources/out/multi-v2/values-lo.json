@@ -1,10 +1,27 @@
 {
     "logs": [
         {
-            "outputFile": "com.project.swiftaid.composeApp-mergeDebugResources-39:/values-lo/values-lo.xml",
+            "outputFile": "com.project.swiftaid.composeApp-mergeDebugResources-2:/values-lo/values-lo.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\43071b7ba909cec4a2c6351ba2971cc4\\transformed\\foundation\\res\\values-lo\\values-lo.xml",
+                    "source": "C:\\Users\\Divy\\Downloads\\divy\\caches\\8.14.3\\transforms\\f527b461faea3b6d79b93d2fe230739b\\transformed\\ui\\res\\values-lo\\values-lo.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,213,303,380,489,587,676,765,855,941,1024,1104,1188,1262,1350,1431,1506,1581,1659,1725",
+                        "endColumns": "107,89,76,108,97,88,88,89,85,82,79,83,73,87,80,74,74,77,65,120",
+                        "endOffsets": "208,298,375,484,582,671,760,850,936,1019,1099,1183,1257,1345,1426,1501,1576,1654,1720,1841"
+                    },
+                    "to": {
+                        "startLines": "3,11,12,13,14,15,16,17,86,87,88,89,90,91,92,93,94,96,97,98",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "221,1035,1125,1202,1311,1409,1498,1587,8927,9013,9096,9176,9260,9334,9422,9503,9578,9754,9832,9898",
+                        "endColumns": "107,89,76,108,97,88,88,89,85,82,79,83,73,87,80,74,74,77,65,120",
+                        "endOffsets": "324,1120,1197,1306,1404,1493,1582,1672,9008,9091,9171,9255,9329,9417,9498,9573,9648,9827,9893,10014"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\Divy\\Downloads\\divy\\caches\\8.14.3\\transforms\\43071b7ba909cec4a2c6351ba2971cc4\\transformed\\foundation\\res\\values-lo\\values-lo.xml",
                     "from": {
                         "startLines": "2,3,4",
                         "startColumns": "4,4,4",
@@ -21,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\313613fe34b04f2c0f0ce434554554e4\\transformed\\material3\\res\\values-lo\\values-lo.xml",
+                    "source": "C:\\Users\\Divy\\Downloads\\divy\\caches\\8.14.3\\transforms\\313613fe34b04f2c0f0ce434554554e4\\transformed\\material3\\res\\values-lo\\values-lo.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -38,7 +55,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\efdc8ddffee609d9065f4dfbc6841cc3\\transformed\\core-1.18.0\\res\\values-lo\\values-lo.xml",
+                    "source": "C:\\Users\\Divy\\Downloads\\divy\\caches\\8.14.3\\transforms\\efdc8ddffee609d9065f4dfbc6841cc3\\transformed\\core-1.18.0\\res\\values-lo\\values-lo.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -52,23 +69,6 @@
                         "startOffsets": "329,425,528,627,725,826,924,9653",
                         "endColumns": "95,102,98,97,100,97,110,100",
                         "endOffsets": "420,523,622,720,821,919,1030,9749"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\dhruv\\.gradle\\caches\\8.14.3\\transforms\\f527b461faea3b6d79b93d2fe230739b\\transformed\\ui\\res\\values-lo\\values-lo.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,213,303,380,489,587,676,765,855,941,1024,1104,1188,1262,1350,1431,1506,1581,1659,1725",
-                        "endColumns": "107,89,76,108,97,88,88,89,85,82,79,83,73,87,80,74,74,77,65,120",
-                        "endOffsets": "208,298,375,484,582,671,760,850,936,1019,1099,1183,1257,1345,1426,1501,1576,1654,1720,1841"
-                    },
-                    "to": {
-                        "startLines": "3,11,12,13,14,15,16,17,86,87,88,89,90,91,92,93,94,96,97,98",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "221,1035,1125,1202,1311,1409,1498,1587,8927,9013,9096,9176,9260,9334,9422,9503,9578,9754,9832,9898",
-                        "endColumns": "107,89,76,108,97,88,88,89,85,82,79,83,73,87,80,74,74,77,65,120",
-                        "endOffsets": "324,1120,1197,1306,1404,1493,1582,1672,9008,9091,9171,9255,9329,9417,9498,9573,9648,9827,9893,10014"
                     }
                 }
             ]

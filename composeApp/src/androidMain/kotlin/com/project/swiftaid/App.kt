@@ -85,7 +85,7 @@ fun App() {
         LocalIsDark provides isDark
     ) {
         MaterialTheme {
-            val screenOrder = listOf("SignIn", "UserInfo", "MedicalInfo", "InsuranceInfo")
+            val screenOrder = listOf("SignIn", "UserInfo", "MedicalInfo", "InsuranceInfo", "Settings")
             fun getScreenIndex(screen: String) = screenOrder.indexOf(screen)
 
             androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
@@ -135,8 +135,12 @@ fun App() {
                             onBack = { currentScreen = "UserInfo" }
                         )
                         "InsuranceInfo" -> InsuranceInfoScreen(
-                            onContinue = { currentScreen = "SignIn" },
+                            onContinue = { currentScreen = "Settings" },
                             onBack = { currentScreen = "MedicalInfo" }
+                        )
+                        "Settings" -> SettingsScreen(
+                            onBack = { currentScreen = "InsuranceInfo" },
+                            onSignOut = { currentScreen = "SignIn" }
                         )
                     }
                 }
