@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.ksp)
 }
 
 kotlin {
@@ -29,6 +30,9 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.androidx.room.ktx)
+            implementation(libs.androidx.work.runtime.ktx)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -75,5 +79,6 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+    "kspAndroid"(libs.androidx.room.compiler)
 }
 
