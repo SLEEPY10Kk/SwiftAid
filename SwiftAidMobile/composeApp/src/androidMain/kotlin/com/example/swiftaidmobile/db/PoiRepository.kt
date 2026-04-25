@@ -1,6 +1,9 @@
 package com.example.swiftaidmobile.db
 
 import android.content.Context
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
@@ -18,14 +21,14 @@ class PoiRepository(context: Context) {
     suspend fun getNearestPois(limit: Int = 5): List<PoiEntity> =
         dao.getNearest(limit)
 
-    suspend fun syncFromServer(lat: Double, lon: Double) {
+    suspend fun syncFromServer(lat: Double, lon: Double) = withContext(Dispatchers.IO) {
         try {
-            val url = URL("http://192.168.5.108:8000/nearby/merged?lat=$lat&lon=$lon")
+            val url = URL("http://10.0.2.2:8000/nearby/merged?lat=$lat&lon=$lon")
             val conn = url.openConnection() as HttpURLConnection
             conn.connectTimeout = 10_000
             conn.readTimeout    = 15_000
 
-            if (conn.responseCode != 200) return
+            if (conn.responseCode != 200) return@withContext
 
             val json     = conn.inputStream.bufferedReader().readText()
             conn.disconnect()
@@ -58,7 +61,7 @@ class PoiRepository(context: Context) {
             dao.insertAll(pois)
 
         } catch (e: Exception) {
-            e.printStackTrace()  // silently fail — old cache stays
+            Log.e("RoadSOS", "Sync failed", e)
         }
     }
 }
