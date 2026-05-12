@@ -28,6 +28,7 @@ kotlin {
     
     sourceSets {
         androidMain.dependencies {
+            implementation(libs.androidx.appcompat)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.room.runtime)
@@ -80,5 +81,6 @@ android {
 dependencies {
     debugImplementation(libs.compose.uiTooling)
     "kspAndroid"(libs.androidx.room.compiler)
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 }
 
