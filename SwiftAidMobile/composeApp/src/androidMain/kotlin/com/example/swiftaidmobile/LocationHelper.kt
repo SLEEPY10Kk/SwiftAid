@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Looper
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 
@@ -27,7 +28,7 @@ class LocationHelper(private val context: Context) {
                     location?.let { callback(it.latitude, it.longitude) }
                 }
             } catch (e: SecurityException) {
-                // Should not happen as we check hasPermission()
+                if (BuildConfig.DEBUG) Log.e("RoadSOS", "SecurityException in getLastLocation: ${e.message}")
             }
         }
     }
@@ -45,6 +46,8 @@ class LocationHelper(private val context: Context) {
             }
         }
 
+        if (BuildConfig.DEBUG) Log.d("RoadSOS", "hasPermission: ${hasPermission()}")
+
         if (hasPermission()) {
             try {
                 fusedLocationClient.requestLocationUpdates(
@@ -52,9 +55,12 @@ class LocationHelper(private val context: Context) {
                     locationCallback,
                     Looper.getMainLooper()
                 )
+                if (BuildConfig.DEBUG) Log.d("RoadSOS", "Location updates started")
             } catch (e: SecurityException) {
-                // Should not happen
+                if (BuildConfig.DEBUG) Log.e("RoadSOS", "SecurityException in startLiveUpdates: ${e.message}")
             }
+        } else {
+            if (BuildConfig.DEBUG) Log.e("RoadSOS", "Permission not granted — location updates NOT started")
         }
         return locationCallback
     }

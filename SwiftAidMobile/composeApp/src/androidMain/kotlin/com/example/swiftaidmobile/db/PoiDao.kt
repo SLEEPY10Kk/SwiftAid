@@ -17,6 +17,9 @@ interface PoiDao {
     @Query("SELECT * FROM pois WHERE type = :type ORDER BY distance_m ASC")
     suspend fun getByType(type: String): List<PoiEntity>
 
+    @Query("SELECT * FROM pois WHERE type = :type ORDER BY distance_m ASC LIMIT 1")
+    suspend fun getNearestOfType(type: String): PoiEntity?
+
     @Query("DELETE FROM pois")
     suspend fun clearAll()
 

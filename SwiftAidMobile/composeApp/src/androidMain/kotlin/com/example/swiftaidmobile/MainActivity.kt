@@ -22,6 +22,8 @@ class MainActivity : AppCompatActivity() {
     private var currentLat = 0.0
     private var currentLon = 0.0
 
+    private var hasSynced = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -62,33 +64,47 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startLocationAndSync() {
+        if (BuildConfig.DEBUG) Log.d("RoadSOS", "startLocationAndSync called")
+
         // Start live location updates
         locationCallback = locationHelper.startLiveUpdates { lat, lon ->
+            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Location callback fired: $lat, $lon")
             currentLat = lat
             currentLon = lon
-            Log.d("RoadSOS", "Location Update: $lat, $lon")
+            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Location Update: $lat, $lon")
 
             // Sync POI cache with real location
             lifecycleScope.launch {
-                val repo = PoiRepository(this@MainActivity)
-                if (!repo.isCacheValid()) {
-                    repo.syncFromServer(lat, lon)
-                    
-                    // Read back from DB (increased limit to find more potential matches)
-                    val allPois = repo.getNearestPois(50)
+                if (!hasSynced) {
+                    hasSynced = true
+                    if (BuildConfig.DEBUG) Log.d("RoadSOS", "Coroutine launched")
+                    val repo = PoiRepository(this@MainActivity)
+                    val cacheValid = repo.isCacheValid()
+                    if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache valid: $cacheValid")
 
-                    // Filter for specific emergency types
-                    val emergencyTypes = setOf("hospital", "fire_station", "police")
-                    val filteredPois = allPois.filter { it.type.lowercase() in emergencyTypes }
+                    if (!cacheValid) {
+                        if (BuildConfig.DEBUG) Log.d("RoadSOS", "Starting sync...")
+                        repo.syncFromServer(lat, lon)
+                        if (BuildConfig.DEBUG) Log.d("RoadSOS", "Sync complete")
 
-                    // Print to Logcat
-                    filteredPois.forEach {
-                        Log.d("RoadSOS", "Emergency POI: ${it.name} — ${it.distance_m}m — ${it.type}")
+                        val allPois          = repo.getNearestPois(200)
+                        val nearestByType    = repo.getNearestByEmergencyType()
+
+                        if (BuildConfig.DEBUG) {
+                            // Summary log
+                            Log.d("RoadSOS", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                            Log.d("RoadSOS", "Total POIs in DB: ${allPois.size}")
+                            Log.d("RoadSOS", "Emergency POIs for Routes API:")
+                            nearestByType.forEach { (type, poi) ->
+                                Log.d("RoadSOS", "  [$type] ${poi.name} — ${poi.distance_m}m — ${poi.lat},${poi.lon}")
+                            }
+                            Log.d("RoadSOS", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+                            Log.d("RoadSOS", "Synced: Found ${nearestByType.size} unique emergency types out of ${allPois.size} total POIs.")
+                        }
+                    } else {
+                        if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache is still valid, skipping server sync.")
                     }
-
-                    Log.d("RoadSOS", "Synced: Found ${filteredPois.size} emergency POIs out of ${allPois.size} total.")
-                } else {
-                    Log.d("RoadSOS", "Cache is still valid, skipping server sync.")
                 }
             }
 

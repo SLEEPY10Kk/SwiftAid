@@ -1,4 +1,4 @@
-rootProject.name = "SwiftAidMobile"
+rootProject.name = "SwiftAid"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
@@ -31,4 +31,5 @@ dependencyResolutionManagement {
     }
 }
 
-include(":composeApp")
+include(":SwiftAidMobile:composeApp")
+// include(":SwiftAidMobile:iosApp") // If iosApp has a build.gradle.kts, but it usually doesn't in KMP
