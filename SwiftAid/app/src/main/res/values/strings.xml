@@ -1,0 +1,46 @@
+<resources>
+    <string name="app_name">SwiftAid</string>
+    <string name="main_title">SwiftAid Monitor</string>
+    <string name="main_contacts_label">Emergency contacts</string>
+    <string name="main_contacts_hint">+15551234567, +15557654321</string>
+    <string name="main_start">Start SOS Monitoring</string>
+    <string name="main_stop">Stop Monitoring</string>
+    <string name="main_overlay_permission">Grant Overlay Permission</string>
+    <string name="main_volunteer_mode">Enable mesh volunteering</string>
+    <string name="main_manual_sos">Manual SOS Trigger</string>
+    <string name="main_status_ready">Ready</string>
+    <string name="main_status_monitoring">Monitoring at 50Hz</string>
+    <string name="main_status_stopped">Monitoring stopped</string>
+    <string name="main_status_auto_starting">Preparing automatic monitoring</string>
+    <string name="main_status_gps_required">Turn on GPS/location to start monitoring</string>
+    <string name="main_status_overlay_required">Allow display over other apps to show SOS on lock screen</string>
+    <string name="main_status_volunteer_on">Mesh volunteering enabled</string>
+    <string name="main_status_volunteer_off">Mesh volunteering disabled</string>
+    <string name="main_status_volunteer_permissions_missing">Nearby permissions required for mesh volunteering</string>
+    <string name="main_status_permissions_missing">Permissions required for microphone, SMS, location, and notifications</string>
+    <string name="main_status_manual_permissions_missing">Manual SOS needs SMS and location permissions</string>
+    <string name="main_status_contacts_missing">Add at least one emergency contact</string>
+    <string name="monitor_channel_name">Crash monitoring</string>
+    <string name="crash_channel_name">Crash alert</string>
+    <string name="mesh_channel_name">SOS mesh relay</string>
+    <string name="monitor_notification_title">SwiftAid active</string>
+    <string name="monitor_notification_text">Native crash detection is running</string>
+    <string name="mesh_notification_title">SwiftAid mesh active</string>
+    <string name="mesh_notification_passive">Low-power nearby relay listening</string>
+    <string name="mesh_notification_active">Relaying SOS to nearby devices</string>
+    <string name="crash_notification_title">Crash detected</string>
+    <string name="crash_notification_text">Use Stop on the SOS screen to cancel dispatch</string>
+    <string name="sos_title">Emergency SOS</string>
+    <string name="sos_subtitle">Emergency dispatch starts when the countdown ends.</string>
+    <string name="sos_status_counting">SwiftAid will notify emergency contacts\nwhen the countdown ends.</string>
+    <string name="sos_status_cancelled">SOS cancelled</string>
+    <string name="sos_status_location">Fetching emergency location</string>
+    <string name="sos_status_not_sent">SOS could not send. Check contacts and SMS permission.</string>
+    <string name="sos_slider_label">Emergency Call</string>
+    <string name="sos_stop_label">Stop</string>
+    <string name="sos_countdown_seconds">%1$d</string>
+    <plurals name="sos_status_sent">
+        <item quantity="one">SOS sent to %d contact</item>
+        <item quantity="other">SOS sent to %d contacts</item>
+    </plurals>
+</resources>
