@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@drawable/main_background"
+    tools:context=".MainActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="640dp"
+        android:paddingStart="20dp"
+        android:paddingTop="36dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="32dp">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/main_title"
+            android:textColor="#FFFFFF"
+            android:textSize="34sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/subtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/main_subtitle"
+            android:textColor="#A9BAC6"
+            android:textSize="16sp"
+            android:lineSpacingExtra="2dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/title"
+            tools:text="Crash monitoring and emergency contact dispatch" />
+
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/status_panel"
+            android:drawablePadding="10dp"
+            android:paddingStart="16dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="14dp"
+            android:textColor="#F4CB7A"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/subtitle"
+            tools:text="Ready" />
+
+        <LinearLayout
+            android:id="@+id/contact_panel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/surface_panel"
+            android:orientation="vertical"
+            android:padding="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/status_text">
+
+        <TextView
+            android:id="@+id/contacts_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/main_contacts_label"
+            android:textColor="#F4F7F8"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/contacts_caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/main_contacts_caption"
+            android:textColor="#8FA1AD"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/selected_contacts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="96dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/contact_input_background"
+            android:gravity="top|start"
+            android:padding="16dp"
+            android:text="@string/main_contacts_empty"
+            android:textColor="#D8E5EB"
+            android:textSize="15sp"
+            android:lineSpacingExtra="3dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/pick_contact"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:text="@string/main_pick_contact"
+            android:textAllCaps="false"
+            android:textColor="#D8E5EB"
+            app:cornerRadius="8dp"
+            app:strokeColor="#647783" />
+
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/manual_sos"
+            android:layout_width="0dp"
+            android:layout_height="58dp"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/button_danger_background"
+            android:stateListAnimator="@null"
+            android:text="@string/main_manual_sos"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:cornerRadius="8dp"
+            app:backgroundTint="@null"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/contact_panel" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

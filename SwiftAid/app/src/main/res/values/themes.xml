@@ -1,0 +1,27 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.SwiftAid" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">#D84A3A</item>
+        <item name="colorPrimaryVariant">#10161D</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">#36C2A3</item>
+        <item name="colorSecondaryVariant">#217B70</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">#10161D</item>
+        <item name="android:navigationBarColor">#10161D</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <style name="Theme.SwiftAid.SOSOverlay" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#D94B4B</item>
+        <item name="android:navigationBarColor">#12161A</item>
+        <item name="android:statusBarColor">#12161A</item>
+    </style>
+</resources>

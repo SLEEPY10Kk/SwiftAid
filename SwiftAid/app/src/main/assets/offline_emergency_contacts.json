@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "districts": [
+    {
+      "name": "Ahmedabad",
+      "bounds": {
+        "minLat": 22.8500,
+        "maxLat": 23.2500,
+        "minLng": 72.4000,
+        "maxLng": 72.7500
+      },
+      "contacts": [
+        {
+          "type": "hospital",
+          "name": "Civil Hospital Ahmedabad",
+          "phone": "07922683721",
+          "lat": 23.0525,
+          "lng": 72.6031
+        },
+        {
+          "type": "hospital",
+          "name": "VS General Hospital",
+          "phone": "07926577621",
+          "lat": 23.0216,
+          "lng": 72.5719
+        },
+        {
+          "type": "police",
+          "name": "Ahmedabad Police Control Room",
+          "phone": "100",
+          "lat": 23.0225,
+          "lng": 72.5714
+        },
+        {
+          "type": "police",
+          "name": "Navrangpura Police Station",
+          "phone": "07926463333",
+          "lat": 23.0396,
+          "lng": 72.5638
+        }
+      ]
+    },
+    {
+      "name": "Gandhinagar",
+      "bounds": {
+        "minLat": 23.1200,
+        "maxLat": 23.3500,
+        "minLng": 72.5500,
+        "maxLng": 72.8000
+      },
+      "contacts": [
+        {
+          "type": "hospital",
+          "name": "GMERS Civil Hospital Gandhinagar",
+          "phone": "07923221931",
+          "lat": 23.2156,
+          "lng": 72.6369
+        },
+        {
+          "type": "police",
+          "name": "Gandhinagar Police Control Room",
+          "phone": "100",
+          "lat": 23.2156,
+          "lng": 72.6369
+        }
+      ]
+    }
+  ]
+}
