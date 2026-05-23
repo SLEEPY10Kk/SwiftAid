@@ -1,14 +1,14 @@
 """
-API Audit — FastAPI version
+RoadSOS API — FastAPI
 Mappls (MapmyIndia) + Google Places + OSM Overpass
 
-Start:  uvicorn main:app --reload
+Start:  uvicorn main:app --host 0.0.0.0 --port 8000
 Docs:   http://localhost:8000/docs
 
-Keys required in .env / Keys.env:
+Keys required in .env:
     MAPPLS_CLIENT_ID=...
     MAPPLS_CLIENT_SECRET=...
-    GOOGLE_API_KEY=...        (optional)
+    GOOGLE_API_KEY=...
 """
 
 from __future__ import annotations
@@ -43,37 +43,69 @@ OVERPASS_ENDPOINTS = [
     "https://overpass.kumi.systems/api/interpreter",
 ]
 
-# ── Ground truth + test points ────────────────────────────────────────────────
-GROUND_TRUTH = [
-    {"name": "Anand Agricultural University", "lat": 22.5421, "lon": 72.9563, "region": "semi-urban"},
-    {"name": "Dantewada District Hospital",   "lat": 18.8930, "lon": 81.3476, "region": "rural"},
-    {"name": "Lahaul Primary School",         "lat": 32.6900, "lon": 77.0500, "region": "remote"},
-    {"name": "Lakshadweep Jetty",             "lat": 10.5593, "lon": 72.6358, "region": "island"},
-    {"name": "Sabarmati Ashram",              "lat": 23.0603, "lon": 72.5802, "region": "urban"},
-]
-
-TEST_POINTS = [
-    {"name": "Anand",       "lat": 22.56, "lon": 72.92},
-    {"name": "Dantewada",   "lat": 18.89, "lon": 81.34},
-    {"name": "Lahaul",      "lat": 32.69, "lon": 77.05},
-    {"name": "Lakshadweep", "lat": 10.56, "lon": 72.63},
-    {"name": "Ahmedabad",   "lat": 23.02, "lon": 72.57},
-]
-
 # ── In-memory caches ──────────────────────────────────────────────────────────
 _MAPPLS_TOKEN_CACHE:  dict = {"token": None, "expires_at": 0}
 _MAPPLS_NEARBY_CACHE: dict = {}
 _GOOGLE_CACHE:        dict = {}
-
-# ── POI cache (replaces per-API caches for crash use) ─────────────────────────
-# Keyed by (lat4, lon4) → {"places": [...], "cached_at": float}
 _POI_CACHE:           dict = {}
-POI_CACHE_TTL         = 1800   # 30 minutes
-POI_CACHE_MOVE_THRESHOLD_M = 500  # refresh if user moves more than this
 
-MAPPLS_KEYWORDS   = "hospital;school;police;bank;post office;government"
+POI_CACHE_TTL = 1800  # 30 minutes
+
+MAPPLS_KEYWORDS   = "hospital;school;police;bank;post office;government;fire station;pharmacy;fuel"
 MAPPLS_TOKEN_URL  = "https://outpost.mapmyindia.com/api/security/oauth/token"
 MAPPLS_NEARBY_URL = "https://atlas.mappls.com/api/places/nearby/json"
+
+# ── Canonical type normalizer ─────────────────────────────────────────────────
+# Unifies naming differences across Mappls / Google / OSM into one standard set
+TYPE_ALIASES: dict[str, str] = {
+    # Medical
+    "hospital":               "hospital",
+    "clinic":                 "hospital",
+    "doctors":                "hospital",
+    "healthcare":             "hospital",
+    "nursing_home":           "hospital",
+    "medical_center":         "hospital",
+    "HLTHSP":                 "hospital",
+    # Police
+    "police":                 "police",
+    "PLCSTN":                 "police",
+    # Fire
+    "fire_station":           "fire_station",
+    "FIRSTN":                 "fire_station",
+    # Pharmacy
+    "pharmacy":               "pharmacy",
+    "chemist":                "pharmacy",
+    "drugstore":              "pharmacy",
+    "MEDST":                  "pharmacy",
+    # Fuel
+    "fuel":                   "fuel",
+    "gas_station":            "fuel",
+    "PETROL":                 "fuel",
+    # Schools
+    "school":                 "school",
+    "primary_school":         "school",
+    "secondary_school":       "school",
+    "SCHOOL":                 "school",
+    # Banks / ATM
+    "bank":                   "bank",
+    "atm":                    "bank",
+    "BANK":                   "bank",
+    # Government
+    "local_government_office":"government",
+    "government":             "government",
+    "townhall":               "government",
+    "GOVOFF":                 "government",
+    # Post
+    "post_office":            "post_office",
+    "POSOFF":                 "post_office",
+}
+
+# Types surfaced in crash response
+EMERGENCY_TYPES = {"hospital", "police", "fire_station", "pharmacy", "fuel"}
+
+
+def normalize_type(raw: str) -> str:
+    return TYPE_ALIASES.get(raw.strip(), raw.lower().strip())
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -113,15 +145,6 @@ def _extract_coords(p: dict, fallback_lat: float, fallback_lon: float):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def deduplicate(places: list, distance_threshold_m: int = 100) -> list:
-    """
-    Merge results from multiple API sources into a single deduplicated list.
-
-    Two places are considered the same if they are within distance_threshold_m
-    of each other. When merging:
-      - Keep the longer/more descriptive name
-      - Record all source APIs that reported this place
-      - Recalculate distance_m from the canonical coords
-    """
     merged = []
     for place in places:
         duplicate = False
@@ -130,10 +153,8 @@ def deduplicate(places: list, distance_threshold_m: int = 100) -> list:
                 place["lat"], place["lon"],
                 existing["lat"], existing["lon"]
             ) < distance_threshold_m:
-                # Same physical location — keep better name
                 if len(str(place.get("name", ""))) > len(str(existing.get("name", ""))):
                     existing["name"] = place["name"]
-                # Merge source tags
                 existing_sources = existing.get("sources", [existing.get("source", "unknown")])
                 new_source = place.get("source", "unknown")
                 if new_source not in existing_sources:
@@ -145,6 +166,9 @@ def deduplicate(places: list, distance_threshold_m: int = 100) -> list:
         if not duplicate:
             p = dict(place)
             p["sources"] = [p.pop("source", "unknown")]
+            # Normalize type on merge
+            raw = p.get("type") or p.get("amenity") or p.get("category", "unknown")
+            p["type"] = normalize_type(str(raw))
             merged.append(p)
     return merged
 
@@ -198,13 +222,14 @@ async def fetch_mappls_nearby(lat: float, lon: float, radius: int = DEFAULT_RADI
     results = []
     for p in suggestions:
         plat, plon = _extract_coords(p, lat, lon)
+        raw_type = ";".join(p.get("keywords", []))
         results.append({
             "name":       p.get("placeName", "Unknown"),
             "address":    p.get("placeAddress", ""),
             "lat":        plat,
             "lon":        plon,
             "eloc":       p.get("eLoc", ""),
-            "category":   ";".join(p.get("keywords", [])),
+            "type":       normalize_type(raw_type.split(";")[0] if raw_type else "unknown"),
             "distance_m": p.get("distance"),
             "source":     "mappls",
         })
@@ -223,7 +248,17 @@ async def fetch_google_nearby(lat: float, lon: float) -> list:
     if not GOOGLE_API_KEY:
         return []
     payload = {
-        "includedTypes": ["hospital", "police", "school", "local_government_office", "bank", "post_office"],
+        "includedTypes": [
+            "hospital", "clinic", "doctor",
+            "police",
+            "fire_station",
+            "pharmacy", "drugstore",
+            "school", "primary_school", "secondary_school",
+            "local_government_office",
+            "bank", "atm",
+            "gas_station",
+            "post_office",
+        ],
         "maxResultCount": 20,
         "locationRestriction": {
             "circle": {
@@ -247,7 +282,7 @@ async def fetch_google_nearby(lat: float, lon: float) -> list:
     for p in places:
         plat  = p["location"]["latitude"]
         plon  = p["location"]["longitude"]
-        ptype = next(
+        raw   = next(
             (t for t in p.get("types", [])
              if t not in ("point_of_interest", "establishment") and not t.endswith("_1")),
             "unknown"
@@ -256,7 +291,7 @@ async def fetch_google_nearby(lat: float, lon: float) -> list:
             "name":       p.get("displayName", {}).get("text", "Unknown"),
             "lat":        plat,
             "lon":        plon,
-            "type":       ptype,
+            "type":       normalize_type(raw),
             "address":    p.get("formattedAddress", ""),
             "distance_m": round(haversine(lat, lon, plat, plon)),
             "source":     "google",
@@ -272,7 +307,7 @@ async def fetch_google_nearby(lat: float, lon: float) -> list:
 async def fetch_osm_nearby(lat: float, lon: float, radius: int = DEFAULT_RADIUS) -> list:
     r = int(radius)
     query = f"""
-    [out:json][timeout:600];
+    [out:json][timeout:60];
     (
       node["amenity"](around:{r},{lat},{lon});
       way["amenity"](around:{r},{lat},{lon});
@@ -280,13 +315,12 @@ async def fetch_osm_nearby(lat: float, lon: float, radius: int = DEFAULT_RADIUS)
     );
     out center;
     """
-    headers = {"User-Agent": "RoadSOSAudit/1.0 (contact@yourdomain.com)"}
+    headers = {"User-Agent": "RoadSOS/1.0"}
     async with httpx.AsyncClient(timeout=65, headers=headers) as client:
         for endpoint in OVERPASS_ENDPOINTS:
             try:
                 resp = await client.post(endpoint, data={"data": query})
                 if resp.status_code != 200:
-                    print(f"OSM {resp.status_code} from {endpoint}: {resp.text[:200]}")
                     continue
                 results = []
                 for el in resp.json().get("elements", []):
@@ -300,13 +334,12 @@ async def fetch_osm_nearby(lat: float, lon: float, radius: int = DEFAULT_RADIUS)
                         "name":       tags.get("name", "Unnamed"),
                         "lat":        elat,
                         "lon":        elon,
-                        "amenity":    tags.get("amenity", ""),
+                        "type":       normalize_type(tags.get("amenity", "unknown")),
                         "distance_m": round(haversine(lat, lon, elat, elon)),
                         "source":     "osm",
                     })
                 return results
-            except Exception as e:
-                print(f"OSM exception on {endpoint}: {e}")
+            except Exception:
                 continue
     return []
 
@@ -321,7 +354,7 @@ async def fetch_osm_by_name(name: str, lat: float, lon: float) -> list:
     nwr["name"~"{token}",i](around:10000,{lat},{lon});
     out center;
     """
-    headers = {"User-Agent": "RoadSOSAudit/1.0 (contact@yourdomain.com)"}
+    headers = {"User-Agent": "RoadSOS/1.0"}
     async with httpx.AsyncClient(timeout=65, headers=headers) as client:
         for endpoint in OVERPASS_ENDPOINTS:
             try:
@@ -342,132 +375,94 @@ async def fetch_osm_by_name(name: str, lat: float, lon: float) -> list:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# POI Cache — setup phase (called on app launch / background refresh)
+# POI Cache
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _poi_cache_key(lat: float, lon: float) -> tuple:
-    return (round(lat, 2), round(lon, 2))   # coarser grid than per-API cache
+    return (round(lat, 2), round(lon, 2))
 
 
 def _poi_cache_valid(lat: float, lon: float) -> bool:
-    key = _poi_cache_key(lat, lon)
-    entry = _POI_CACHE.get(key)
+    entry = _POI_CACHE.get(_poi_cache_key(lat, lon))
     if not entry:
         return False
-    if time.time() - entry["cached_at"] > POI_CACHE_TTL:
-        return False
-    return True
+    return (time.time() - entry["cached_at"]) < POI_CACHE_TTL
 
 
 async def warm_poi_cache(lat: float, lon: float, radius: int = DEFAULT_RADIUS) -> list:
-    """
-    Fetch from all 3 APIs in parallel, deduplicate, sort by distance,
-    and store in the POI cache. Returns the merged list.
-
-    Call this on app launch and every 30 min in the background.
-    The crash handler reads from this cache — zero API calls on crash.
-    """
     key = _poi_cache_key(lat, lon)
-
     mappls_res, google_res, osm_res = await asyncio.gather(
         fetch_mappls_nearby(lat, lon, radius),
         fetch_google_nearby(lat, lon),
         fetch_osm_nearby(lat, lon, radius),
         return_exceptions=True,
     )
-
     combined = []
     for res in (mappls_res, google_res, osm_res):
         if isinstance(res, list):
             combined.extend(res)
-
     merged = deduplicate(combined)
     merged.sort(key=lambda x: x.get("distance_m") or 0)
-
-    _POI_CACHE[key] = {
-        "places":    merged,
-        "cached_at": time.time(),
-        "lat":       lat,
-        "lon":       lon,
-    }
+    _POI_CACHE[key] = {"places": merged, "cached_at": time.time(), "lat": lat, "lon": lon}
     return merged
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Crash handler — reads from cache, falls back to waterfall if cache is cold
+# Crash handler
 # ══════════════════════════════════════════════════════════════════════════════
 
 async def get_emergency_pois(lat: float, lon: float, radius: int = DEFAULT_RADIUS) -> dict:
-    """
-    Main function called when a crash is detected.
-
-    Flow:
-      1. POI cache warm and fresh → return instantly, zero API calls
-      2. POI cache stale/missing  → waterfall: Mappls → OSM → Google
-         (first API that returns results wins; others are skipped)
-
-    Returns:
-      {
-        "source":    "cache" | "mappls" | "osm" | "google" | "none",
-        "cached_at": <unix timestamp> | null,
-        "places":    [...sorted by distance_m...]
-      }
-    """
     key = _poi_cache_key(lat, lon)
 
-    # ── 1. Cache hit ──────────────────────────────────────────────────────────
     if _poi_cache_valid(lat, lon):
-        entry = _POI_CACHE[key]
-        # Re-sort by distance from current crash coords (user may have moved)
-        places = sorted(
-            entry["places"],
-            key=lambda x: haversine(lat, lon, x["lat"], x["lon"])
-        )
-        # Update distance_m relative to crash location
+        entry  = _POI_CACHE[key]
+        places = sorted(entry["places"], key=lambda x: haversine(lat, lon, x["lat"], x["lon"]))
         for p in places:
             p["distance_m"] = round(haversine(lat, lon, p["lat"], p["lon"]))
+        # Nearest per emergency type
+        nearest_by_type = {}
+        for p in places:
+            t = p.get("type", "unknown")
+            if t in EMERGENCY_TYPES and t not in nearest_by_type:
+                nearest_by_type[t] = p
         return {
-            "source":    "cache",
-            "cached_at": entry["cached_at"],
-            "places":    places,
+            "source":          "cache",
+            "cached_at":       entry["cached_at"],
+            "places":          places,
+            "nearest_by_type": nearest_by_type,
         }
 
-    # ── 2. Cache cold — waterfall ─────────────────────────────────────────────
-    # Try Mappls first (best India coverage + distance field built-in)
-    if MAPPLS_CLIENT_ID:
+    # Waterfall: Mappls → OSM → Google
+    for label, coro in [
+        ("mappls", fetch_mappls_nearby(lat, lon, radius) if MAPPLS_CLIENT_ID else None),
+        ("osm",    fetch_osm_nearby(lat, lon, radius)),
+        ("google", fetch_google_nearby(lat, lon) if GOOGLE_API_KEY else None),
+    ]:
+        if coro is None:
+            continue
         try:
-            results = await fetch_mappls_nearby(lat, lon, radius)
+            results = await coro
             if results:
                 results.sort(key=lambda x: x.get("distance_m") or 0)
-                return {"source": "mappls", "cached_at": None, "places": results}
+                nearest_by_type = {}
+                for p in results:
+                    t = p.get("type", "unknown")
+                    if t in EMERGENCY_TYPES and t not in nearest_by_type:
+                        nearest_by_type[t] = p
+                return {
+                    "source":          label,
+                    "cached_at":       None,
+                    "places":          results,
+                    "nearest_by_type": nearest_by_type,
+                }
         except Exception:
-            pass
+            continue
 
-    # Try OSM next (free, no quota risk)
-    try:
-        results = await fetch_osm_nearby(lat, lon, radius)
-        if results:
-            results.sort(key=lambda x: x.get("distance_m") or 0)
-            return {"source": "osm", "cached_at": None, "places": results}
-    except Exception:
-        pass
-
-    # Try Google last (paid, use as last resort)
-    if GOOGLE_API_KEY:
-        try:
-            results = await fetch_google_nearby(lat, lon)
-            if results:
-                results.sort(key=lambda x: x.get("distance_m") or 0)
-                return {"source": "google", "cached_at": None, "places": results}
-        except Exception:
-            pass
-
-    # All APIs failed
-    return {"source": "none", "cached_at": None, "places": []}
+    return {"source": "none", "cached_at": None, "places": [], "nearest_by_type": {}}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Audit logic functions — plain Python, no Query objects
+# Audit logic — no hardcoded test points, takes coords as parameters
 # ══════════════════════════════════════════════════════════════════════════════
 
 async def _inventory_logic() -> dict:
@@ -497,7 +492,9 @@ async def _inventory_logic() -> dict:
                 "rate_limit": "Fair use",
                 "format":     "JSON / XML",
             },
-        ]
+        ],
+        "type_normalization": TYPE_ALIASES,
+        "emergency_types":    list(EMERGENCY_TYPES),
     }
 
 
@@ -545,56 +542,31 @@ async def _schema_logic() -> dict:
     }
 
 
-async def _coverage_logic() -> list:
-    output = []
-    for pt in TEST_POINTS:
-        row: dict = {"location": pt["name"], "lat": pt["lat"], "lon": pt["lon"]}
-        try:
-            row["osm"] = len(await fetch_osm_nearby(pt["lat"], pt["lon"]))
-        except Exception as e:
-            row["osm"] = f"ERR: {e}"
-        if MAPPLS_CLIENT_ID:
-            try:
-                row["mappls"] = len(await fetch_mappls_nearby(pt["lat"], pt["lon"]))
-            except Exception as e:
-                row["mappls"] = f"ERR: {e}"
-        else:
-            row["mappls"] = "no key"
-        if GOOGLE_API_KEY:
-            try:
-                row["google"] = len(await fetch_google_nearby(pt["lat"], pt["lon"]))
-            except Exception as e:
-                row["google"] = f"ERR: {e}"
-        else:
-            row["google"] = "no key"
-        output.append(row)
-    return output
-
-
-async def _reliability_logic(n: int = 10) -> dict:
-    test_lats = [22.56 + i * 0.001 for i in range(n)]
+async def _reliability_logic(lat: float, lon: float, n: int = 5) -> dict:
+    """Latency benchmark — uses caller-supplied coords, no hardcoded locations."""
     output = {}
+    test_lats = [lat + i * 0.001 for i in range(n)]
 
     if MAPPLS_CLIENT_ID:
         times = []
-        for pt in (TEST_POINTS * 4)[:n]:
+        for tlat in test_lats:
             t0 = time.time()
-            await fetch_mappls_nearby(pt["lat"], pt["lon"])
+            await fetch_mappls_nearby(tlat, lon)
             times.append(time.time() - t0)
         output["mappls"] = {
             "avg_s":  round(statistics.mean(times), 4),
             "p95_s":  round(sorted(times)[int(len(times) * 0.95) - 1], 4),
             "errors": 0,
-            "note":   "Cache hits — real network latency ~0.7 s",
+            "note":   "May include cache hits after first call",
         }
     else:
         output["mappls"] = {"note": "no key configured"}
 
     osm_times, osm_errors = [], 0
-    for lat in test_lats:
+    for tlat in test_lats:
         try:
             t0 = time.time()
-            await fetch_osm_nearby(lat, 72.92)
+            await fetch_osm_nearby(tlat, lon)
             osm_times.append(time.time() - t0)
         except Exception:
             osm_errors += 1
@@ -605,10 +577,10 @@ async def _reliability_logic(n: int = 10) -> dict:
     }
 
     g_times, g_errors = [], 0
-    for lat in test_lats:
+    for tlat in test_lats:
         try:
             t0 = time.time()
-            await fetch_google_nearby(lat, 72.92)
+            await fetch_google_nearby(tlat, lon)
             g_times.append(time.time() - t0)
         except Exception:
             g_errors += 1
@@ -626,71 +598,59 @@ async def _reliability_logic(n: int = 10) -> dict:
     return output
 
 
-async def _data_quality_logic() -> list:
-    results = []
-    for place in GROUND_TRUTH:
-        entry: dict = {"place": place["name"], "region": place["region"], "apis": {}}
+async def _data_quality_logic(lat: float, lon: float, name: str) -> dict:
+    """Data quality check against a single caller-supplied ground truth point."""
+    entry: dict = {"place": name, "lat": lat, "lon": lon, "apis": {}}
 
-        if MAPPLS_CLIENT_ID:
-            try:
-                candidates = await fetch_mappls_nearby(place["lat"], place["lon"])
-                if candidates:
-                    best = max(candidates, key=lambda r: name_similarity(r["name"], place["name"]))
-                    sim  = name_similarity(best["name"], place["name"])
-                    dist = haversine(place["lat"], place["lon"], best["lat"], best["lon"])
-                    entry["apis"]["mappls"] = {
-                        "matched_name":  best["name"],
-                        "similarity":    round(sim, 2),
-                        "coord_error_m": round(dist),
-                    }
-                else:
-                    entry["apis"]["mappls"] = {"matched_name": None, "similarity": 0, "note": "0 results"}
-            except Exception as e:
-                entry["apis"]["mappls"] = {"error": str(e)}
-        else:
-            entry["apis"]["mappls"] = {"note": "no key"}
-
-        if GOOGLE_API_KEY:
-            try:
-                candidates = await fetch_google_nearby(place["lat"], place["lon"])
-                if candidates:
-                    best = max(candidates, key=lambda r: name_similarity(r["name"], place["name"]))
-                    sim  = name_similarity(best["name"], place["name"])
-                    dist = haversine(place["lat"], place["lon"], best["lat"], best["lon"])
-                    entry["apis"]["google"] = {
-                        "matched_name":  best["name"],
-                        "similarity":    round(sim, 2),
-                        "coord_error_m": round(dist),
-                    }
-                else:
-                    entry["apis"]["google"] = {"matched_name": None, "similarity": 0, "note": "0 results"}
-            except Exception as e:
-                entry["apis"]["google"] = {"error": str(e)}
-        else:
-            entry["apis"]["google"] = {"note": "no key"}
-
+    if MAPPLS_CLIENT_ID:
         try:
-            candidates = await fetch_osm_by_name(place["name"], place["lat"], place["lon"])
+            candidates = await fetch_mappls_nearby(lat, lon)
             if candidates:
-                best = max(candidates, key=lambda r: name_similarity(r.get("name") or "", place["name"]))
-                sim  = name_similarity(best.get("name", ""), place["name"])
-                dist = haversine(
-                    place["lat"], place["lon"],
-                    best["lat"] or place["lat"],
-                    best["lon"] or place["lon"],
-                )
-                entry["apis"]["osm"] = {
-                    "matched_name":  best.get("name"),
-                    "similarity":    round(sim, 2),
-                    "coord_error_m": round(dist),
+                best = max(candidates, key=lambda r: name_similarity(r["name"], name))
+                entry["apis"]["mappls"] = {
+                    "matched_name":  best["name"],
+                    "similarity":    round(name_similarity(best["name"], name), 2),
+                    "coord_error_m": round(haversine(lat, lon, best["lat"], best["lon"])),
                 }
             else:
-                entry["apis"]["osm"] = {"matched_name": None, "similarity": 0, "note": "0 results"}
+                entry["apis"]["mappls"] = {"note": "0 results"}
         except Exception as e:
-            entry["apis"]["osm"] = {"error": str(e)}
+            entry["apis"]["mappls"] = {"error": str(e)}
+    else:
+        entry["apis"]["mappls"] = {"note": "no key"}
 
-        results.append(entry)
-    return results
+    if GOOGLE_API_KEY:
+        try:
+            candidates = await fetch_google_nearby(lat, lon)
+            if candidates:
+                best = max(candidates, key=lambda r: name_similarity(r["name"], name))
+                entry["apis"]["google"] = {
+                    "matched_name":  best["name"],
+                    "similarity":    round(name_similarity(best["name"], name), 2),
+                    "coord_error_m": round(haversine(lat, lon, best["lat"], best["lon"])),
+                }
+            else:
+                entry["apis"]["google"] = {"note": "0 results"}
+        except Exception as e:
+            entry["apis"]["google"] = {"error": str(e)}
+    else:
+        entry["apis"]["google"] = {"note": "no key"}
+
+    try:
+        candidates = await fetch_osm_by_name(name, lat, lon)
+        if candidates:
+            best = max(candidates, key=lambda r: name_similarity(r.get("name") or "", name))
+            entry["apis"]["osm"] = {
+                "matched_name":  best.get("name"),
+                "similarity":    round(name_similarity(best.get("name", ""), name), 2),
+                "coord_error_m": round(haversine(lat, lon, best["lat"] or lat, best["lon"] or lon)),
+            }
+        else:
+            entry["apis"]["osm"] = {"note": "0 results"}
+    except Exception as e:
+        entry["apis"]["osm"] = {"error": str(e)}
+
+    return entry
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -698,11 +658,12 @@ async def _data_quality_logic() -> list:
 # ══════════════════════════════════════════════════════════════════════════════
 
 app = FastAPI(
-    title="RoadSOS API Audit — Mappls + Google Places + OSM",
+    title="RoadSOS API",
     description=(
-        "Audit checks + crash-optimised POI endpoints.\n\n"
-        "**Crash flow:** Call `/crash/pois` with GPS coords. "
-        "Returns cached results instantly if warm, else waterfalls Mappls → OSM → Google."
+        "POI aggregation for emergency response — Mappls + Google Places + OSM.\n\n"
+        "**Crash flow:** `POST /crash/warm-cache` on app launch. "
+        "On crash call `GET /crash/pois` — returns cached results instantly "
+        "or waterfalls Mappls → OSM → Google."
     ),
     version="2.0.0",
 )
@@ -720,9 +681,7 @@ async def health():
     }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Crash endpoints
-# ══════════════════════════════════════════════════════════════════════════════
+# ── Crash ─────────────────────────────────────────────────────────────────────
 
 @app.get("/crash/pois", tags=["Crash"])
 async def crash_pois(
@@ -731,48 +690,41 @@ async def crash_pois(
     radius: int   = Query(DEFAULT_RADIUS, description="Search radius in metres"),
 ):
     """
-    **Primary endpoint for crash response.**
-
-    Returns nearest emergency POIs (hospitals, police, etc.) as fast as possible.
-    - If cache is warm: instant response, zero API calls
-    - If cache is cold: waterfall Mappls → OSM → Google (first that responds wins)
+    Primary crash endpoint. Returns nearest emergency POIs instantly from cache,
+    or falls back via waterfall if cache is cold.
+    Response includes `nearest_by_type` map for direct Routes API use.
     """
     return await get_emergency_pois(float(lat), float(lon), int(radius))
 
 
 @app.post("/crash/warm-cache", tags=["Crash"])
 async def warm_cache(
-    lat:    float = Query(..., description="User's current latitude"),
-    lon:    float = Query(..., description="User's current longitude"),
+    lat:    float = Query(..., description="User latitude"),
+    lon:    float = Query(..., description="User longitude"),
     radius: int   = Query(DEFAULT_RADIUS, description="Search radius in metres"),
 ):
-    """
-    **Call this on app launch and every 30 min in the background.**
-
-    Fetches all 3 APIs in parallel, deduplicates, and stores in memory.
-    Subsequent `/crash/pois` calls will be served from cache — zero API calls.
-    """
+    """Call on app launch and every 30 min. Warms the POI cache for this location."""
     places = await warm_poi_cache(float(lat), float(lon), int(radius))
+    key    = _poi_cache_key(lat, lon)
     return {
-        "cached":      len(places),
-        "cached_at":   _POI_CACHE[_poi_cache_key(lat, lon)]["cached_at"],
+        "cached":       len(places),
+        "cached_at":    _POI_CACHE[key]["cached_at"],
         "expires_in_s": POI_CACHE_TTL,
     }
 
 
 @app.get("/crash/cache-status", tags=["Crash"])
 async def cache_status(
-    lat: float = Query(..., description="Latitude to check"),
-    lon: float = Query(..., description="Longitude to check"),
+    lat: float = Query(...),
+    lon: float = Query(...),
 ):
-    """Check whether the POI cache is warm for a given location."""
     key   = _poi_cache_key(lat, lon)
     entry = _POI_CACHE.get(key)
     if not entry:
         return {"warm": False, "reason": "no cache entry"}
     age = time.time() - entry["cached_at"]
     if age > POI_CACHE_TTL:
-        return {"warm": False, "reason": f"expired ({int(age)}s old, TTL={POI_CACHE_TTL}s)"}
+        return {"warm": False, "reason": f"expired ({int(age)}s old)"}
     return {
         "warm":         True,
         "places":       len(entry["places"]),
@@ -781,43 +733,41 @@ async def cache_status(
     }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Fetch endpoints (ad-hoc / audit use)
-# ══════════════════════════════════════════════════════════════════════════════
+# ── Fetch ─────────────────────────────────────────────────────────────────────
 
 @app.get("/nearby/mappls", tags=["Fetch"])
 async def nearby_mappls(
-    lat:    float = Query(..., description="Latitude"),
-    lon:    float = Query(..., description="Longitude"),
-    radius: int   = Query(DEFAULT_RADIUS, description="Search radius in metres"),
+    lat:    float = Query(...),
+    lon:    float = Query(...),
+    radius: int   = Query(DEFAULT_RADIUS),
 ):
     return await fetch_mappls_nearby(float(lat), float(lon), int(radius))
 
 
 @app.get("/nearby/google", tags=["Fetch"])
 async def nearby_google(
-    lat: float = Query(..., description="Latitude"),
-    lon: float = Query(..., description="Longitude"),
+    lat: float = Query(...),
+    lon: float = Query(...),
 ):
     return await fetch_google_nearby(float(lat), float(lon))
 
 
 @app.get("/nearby/osm", tags=["Fetch"])
 async def nearby_osm(
-    lat:    float = Query(..., description="Latitude"),
-    lon:    float = Query(..., description="Longitude"),
-    radius: int   = Query(DEFAULT_RADIUS, description="Search radius in metres"),
+    lat:    float = Query(...),
+    lon:    float = Query(...),
+    radius: int   = Query(DEFAULT_RADIUS),
 ):
     return await fetch_osm_nearby(float(lat), float(lon), int(radius))
 
 
 @app.get("/nearby/all", tags=["Fetch"])
 async def nearby_all(
-    lat:    float = Query(..., description="Latitude"),
-    lon:    float = Query(..., description="Longitude"),
-    radius: int   = Query(DEFAULT_RADIUS, description="Search radius in metres"),
+    lat:    float = Query(...),
+    lon:    float = Query(...),
+    radius: int   = Query(DEFAULT_RADIUS),
 ):
-    """Raw results from all three APIs in parallel (not deduplicated)."""
+    """Raw results from all three APIs — not deduplicated."""
     mappls_res, google_res, osm_res = await asyncio.gather(
         fetch_mappls_nearby(float(lat), float(lon), int(radius)),
         fetch_google_nearby(float(lat), float(lon)),
@@ -833,11 +783,11 @@ async def nearby_all(
 
 @app.get("/nearby/merged", tags=["Fetch"])
 async def nearby_merged(
-    lat:    float = Query(..., description="Latitude"),
-    lon:    float = Query(..., description="Longitude"),
-    radius: int   = Query(DEFAULT_RADIUS, description="Search radius in metres"),
+    lat:    float = Query(...),
+    lon:    float = Query(...),
+    radius: int   = Query(DEFAULT_RADIUS),
 ):
-    """Deduplicated + sorted POI list from all three APIs."""
+    """Deduplicated + type-normalized POI list from all three APIs, sorted by distance."""
     mappls_res, google_res, osm_res = await asyncio.gather(
         fetch_mappls_nearby(float(lat), float(lon), int(radius)),
         fetch_google_nearby(float(lat), float(lon)),
@@ -853,9 +803,7 @@ async def nearby_merged(
     return merged
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Audit check endpoints
-# ══════════════════════════════════════════════════════════════════════════════
+# ── Audit checks — all require caller-supplied coords, no hardcoded locations ──
 
 @app.get("/checks/inventory", tags=["Checks"])
 async def check_inventory():
@@ -864,8 +812,8 @@ async def check_inventory():
 
 @app.get("/checks/endpoint-mapping", tags=["Checks"])
 async def check_endpoint_mapping(
-    lat: float = Query(22.56, description="Probe latitude"),
-    lon: float = Query(72.92, description="Probe longitude"),
+    lat: float = Query(..., description="Test latitude"),
+    lon: float = Query(..., description="Test longitude"),
 ):
     return await _endpoint_mapping_logic(float(lat), float(lon))
 
@@ -875,31 +823,19 @@ async def check_schema():
     return await _schema_logic()
 
 
-@app.get("/checks/coverage", tags=["Checks"])
-async def check_coverage():
-    return await _coverage_logic()
-
-
 @app.get("/checks/reliability", tags=["Checks"])
 async def check_reliability(
-    runs: int = Query(10, ge=1, le=20, description="Number of timed calls per API"),
+    lat:  float = Query(..., description="Centre latitude for test"),
+    lon:  float = Query(..., description="Centre longitude for test"),
+    runs: int   = Query(5, ge=1, le=10, description="Calls per API"),
 ):
-    return await _reliability_logic(int(runs))
+    return await _reliability_logic(float(lat), float(lon), int(runs))
 
 
 @app.get("/checks/data-quality", tags=["Checks"])
-async def check_data_quality():
-    return await _data_quality_logic()
-
-
-@app.get("/checks/run-all", tags=["Checks"])
-async def run_all():
-    """Runs all six audit checks and returns a combined report."""
-    return {
-        "inventory":        await _inventory_logic(),
-        "endpoint_mapping": await _endpoint_mapping_logic(22.56, 72.92),
-        "schema":           await _schema_logic(),
-        "coverage":         await _coverage_logic(),
-        "reliability":      await _reliability_logic(10),
-        "data_quality":     await _data_quality_logic(),
-    }
+async def check_data_quality(
+    lat:  float = Query(..., description="Known place latitude"),
+    lon:  float = Query(..., description="Known place longitude"),
+    name: str   = Query(..., description="Known place name to match against"),
+):
+    return await _data_quality_logic(float(lat), float(lon), name)

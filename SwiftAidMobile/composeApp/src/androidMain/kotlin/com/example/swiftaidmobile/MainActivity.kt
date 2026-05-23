@@ -66,50 +66,58 @@ class MainActivity : AppCompatActivity() {
     private fun startLocationAndSync() {
         if (BuildConfig.DEBUG) Log.d("RoadSOS", "startLocationAndSync called")
 
-        // Start live location updates
+        // 1. Try immediate sync with last known location
+        locationHelper.getLastLocation { lat, lon ->
+            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Last known location obtained: $lat, $lon")
+            performSyncAndDisplay(lat, lon)
+        }
+
+        // 2. Also start live updates to ensure sync happens as soon as a fix is acquired
         locationCallback = locationHelper.startLiveUpdates { lat, lon ->
-            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Location callback fired: $lat, $lon")
-            currentLat = lat
-            currentLon = lon
-            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Location Update: $lat, $lon")
-
-            // Sync POI cache with real location
-            lifecycleScope.launch {
-                if (!hasSynced) {
-                    hasSynced = true
-                    if (BuildConfig.DEBUG) Log.d("RoadSOS", "Coroutine launched")
-                    val repo = PoiRepository(this@MainActivity)
-                    val cacheValid = repo.isCacheValid()
-                    if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache valid: $cacheValid")
-
-                    if (!cacheValid) {
-                        if (BuildConfig.DEBUG) Log.d("RoadSOS", "Starting sync...")
-                        repo.syncFromServer(lat, lon)
-                        if (BuildConfig.DEBUG) Log.d("RoadSOS", "Sync complete")
-
-                        val allPois          = repo.getNearestPois(200)
-                        val nearestByType    = repo.getNearestByEmergencyType()
-
-                        if (BuildConfig.DEBUG) {
-                            // Summary log
-                            Log.d("RoadSOS", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-                            Log.d("RoadSOS", "Total POIs in DB: ${allPois.size}")
-                            Log.d("RoadSOS", "Emergency POIs for Routes API:")
-                            nearestByType.forEach { (type, poi) ->
-                                Log.d("RoadSOS", "  [$type] ${poi.name} — ${poi.distance_m}m — ${poi.lat},${poi.lon}")
-                            }
-                            Log.d("RoadSOS", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
-                            Log.d("RoadSOS", "Synced: Found ${nearestByType.size} unique emergency types out of ${allPois.size} total POIs.")
-                        }
-                    } else {
-                        if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache is still valid, skipping server sync.")
-                    }
-                }
-            }
-
+            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Live location obtained: $lat, $lon")
+            performSyncAndDisplay(lat, lon)
+            
             // Schedule background worker with real coords
             PoiSyncWorker.schedule(this@MainActivity, lat, lon)
+        }
+    }
+
+    private fun performSyncAndDisplay(lat: Double, lon: Double) {
+        // Always update global coords for crash detection
+        currentLat = lat
+        currentLon = lon
+
+        // Only proceed with the sync check if we have a valid location and haven't synced yet.
+        // This avoids blocking the sync if the first fix is an invalid (0.0, 0.0) point.
+        if (hasSynced || (lat == 0.0 && lon == 0.0)) return
+        hasSynced = true
+
+        lifecycleScope.launch {
+            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Location fix acquired ($lat, $lon). Checking sync status...")
+            val repo = PoiRepository(this@MainActivity)
+            val cacheValid = repo.isCacheValid()
+
+            if (!cacheValid) {
+                if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache invalid, starting sync...")
+                repo.syncFromServer(lat, lon)
+            } else {
+                if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache still valid, using existing data.")
+            }
+
+            // Always fetch and display results once we have confirmed our sync state
+            val allPois = repo.getNearestPois(200)
+            val nearestByType = repo.getNearestByEmergencyType()
+
+            if (BuildConfig.DEBUG) {
+                Log.d("RoadSOS", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                Log.d("RoadSOS", "Sync location: $lat, $lon")
+                Log.d("RoadSOS", "Total POIs in DB: ${allPois.size}")
+                Log.d("RoadSOS", "Nearest Emergency Services:")
+                nearestByType.forEach { (type, poi) ->
+                    Log.d("RoadSOS", "  [$type] ${poi.name} — ${poi.distance_m}m")
+                }
+                Log.d("RoadSOS", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            }
         }
     }
 
