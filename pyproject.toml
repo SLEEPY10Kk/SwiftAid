@@ -20,4 +20,8 @@ dependencies = [
     "python-jose[cryptography]>=3.5.0",
     "pyjwt>=2.12.1",
     "requests>=2.33.1",
+    "httpx>=0.28.1",
+    "rapidfuzz>=3.14.5",
+    "twilio>=9.0.0",
+    "sendgrid>=6.11.0",
 ]

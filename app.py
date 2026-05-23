@@ -12,8 +12,13 @@ from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, ConfigDict
 from sqlalchemy.dialects.postgresql import UUID as SQLUUID
 from google.auth.transport import requests as google_requests
-from sqlalchemy import Column, Integer, String, select, ForeignKey
+from sqlalchemy import Column, Integer, String, select, ForeignKey, Float
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+
+import httpx
+from twilio.rest import Client 
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail 
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -22,6 +27,14 @@ SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
+TWILIO_WHATSAPP_NUMBER = os.getenv("TWILIO_WHATSAPP_NUMBER")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+HOSPITAL_EMAIL = os.getenv("HOSPITAL_EMAIL")
+FROM_EMAIL = os.getenv("FROM_EMAIL")
 
 # ════════════════════════════════════════════════════════════════════════════════
 # Database Connection Setup
@@ -77,10 +90,54 @@ class DBInsuranceInfo(Base):
     insurance_provider = Column(String, index=True)
     insurance_policy_number = Column(String, unique=True, index=True)
 
+class DBcrashrecords(Base):
+    __tablename__ = "crash_records"
+    crash_id = Column(SQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    user_id = Column(SQLUUID(as_uuid=True), ForeignKey("users.user_id"), index=True)
+    g_force = Column(String, index=True)
+    severity_score = Column(String, index=True)
+    speed_at_impact = Column(String, index=True)
+    latitude = Column(Float, index=True)
+    longitude = Column(Float, index=True)
+    hospital_name = Column(String, index=True)
+    dispatch_hospital_email = Column(String, index=True)
+    dispatch_hospital_number = Column(String, index=True)
+    hospital_latitude = Column(Float, index=True)
+    hospital_longitude = Column(Float, index=True)
+    hospital_distance_km = Column(Float, index=True)    
+    triggered_at = Column(String, default=lambda: datetime.now(timezone.utc).isoformat(), index=True)
+    status = Column(String, index=True)
+
+class DBPoliceRecords(Base):
+    __tablename__ = "police_records"
+
+    record_id = Column(SQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    crash_id = Column(SQLUUID(as_uuid=True), ForeignKey("crash_records.crash_id"), index=True)
+    user_id = Column(SQLUUID(as_uuid=True), ForeignKey("users.user_id"), index=True)
+
+    station_address = Column(String, index=True)
+    station_state = Column(String, index=True)
+    station_district = Column(String, index=True)
+
+    station_name = Column(String, index=True)
+    station_code = Column(String, index=True)
+    officer_name = Column(String, index=True)
+    officer_contact = Column(String, index=True)
+    
+    latitude = Column(Float, index=True)
+    longitude = Column(Float, index=True)
+
+    call_type   = Column(String, index=True)  # self called, called for other and .
+    status = Column(String, index=True) # active, pending and resolved.
+
+    created_at = Column(String, default=lambda: datetime.now(timezone.utc).isoformat())
+    responded_at = Column(String, index=True)
+    resolved_at = Column(String, index=True)
+
 # ════════════════════════════════════════════════════════════════════════════════
 # Pydantic Validation Models
 # ════════════════════════════════════════════════════════════════════════════════
-class UserBase(BaseModel):   
+class UserBase(BaseModel):    
     username: str
     email: EmailStr
     FirstName: str
@@ -118,7 +175,10 @@ class EmergencyContactCreate(DBEmergencyContactBase):
 class EmergencyContactResponse(DBEmergencyContactBase):
     contact_id: UUID
     model_config = ConfigDict(from_attributes=True)
-
+class EmergencyContactUpdate(BaseModel):
+    contact_number : Optional[str] = None 
+    relationship : Optional[str] = None 
+    priority_order : Optional[int] = None 
 
 class DBMedicalInfoBase(BaseModel):
     bloodGroup: str
@@ -128,10 +188,14 @@ class DBMedicalInfoBase(BaseModel):
 class MedicalInfoCreate(DBMedicalInfoBase):
     user_id: UUID
 class MedicalInfoResponse(DBMedicalInfoBase):
-    medical_id: UUID 
+    medical_id: UUID    
     user_id: UUID 
     model_config = ConfigDict(from_attributes=True)
-
+class MedicalInfoUpdate(BaseModel):
+    bloodGroup : Optional[str] = None
+    allergies : Optional[str] = None
+    chronicConditions : Optional[str] = None
+    currentmedications : Optional[str] = None
 
 class DBInsuranceInfoBase(BaseModel):
     user_id: UUID
@@ -143,13 +207,52 @@ class InsuranceInfoCreate(DBInsuranceInfoBase):
 class InsuranceInfoResponse(DBInsuranceInfoBase):
     insurance_id: UUID 
     model_config = ConfigDict(from_attributes=True)
+class InsuranceInfoUpdate(BaseModel):
+    insurance_type : Optional[str] = None 
+    insurance_provider : Optional[str] = None
+    insurance_policy_number : Optional[str] = None
 
+
+class PoliceRecordCreate(BaseModel):
+    crash_id: UUID
+    user_id: UUID
+    latitude: float
+    longitude: float
+    call_type: str     
+class PoliceRecordResponse(BaseModel): 
+    record_id: UUID
+    crash_id: UUID
+    user_id: UUID
+    call_type: str
+    status: str
+    latitude: float
+    longitude: float
+    officer_name: Optional[str] = None
+    station_code: Optional[str] = None
+    station_name: Optional[str] = None
+    created_at: str
+    responded_at: Optional[str] = None
+    resolved_at: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+class PoliceRecordUpdate(BaseModel):
+    status: Optional[str] = None                    
+    officer_name: Optional[str] = None
+    station_code: Optional[str] = None
+    station_name: Optional[str] = None
+    
+class CrashTriggerPayload(BaseModel):
+    user_id : UUID 
+    latitude : float
+    longitude : float
+    g_force : str
+    severity_score : str
+    speed_at_impact : str
 
 class GoogleToken(BaseModel):
     token: str
 
 # ════════════════════════════════════════════════════════════════════════════════
-# App Lifespan and Dependencies
+# App Initialization and Session Management
 # ════════════════════════════════════════════════════════════════════════════════
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -177,6 +280,81 @@ def create_refresh_token(data: dict):
     expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def direct_sms(to: str, message: str):
+    try: 
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        client.message.create(
+            body = message,
+            from_ = TWILIO_PHONE_NUMBER,
+            to = to
+        )
+        print(f"SMS sent to {to}")
+    except Exception as e:
+        print(f"Failed to send SMS to {to} : {e}")
+    
+def whatsapp_sms(to: str, message: str):
+    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    
+    sent_message = client.messages.create(
+        body=message,
+        from_="whatsapp:+14155238886",   # hardcode the sandbox number directly
+        to=f"whatsapp:{to}"
+    )
+    print(f"WhatsApp sent to {to} — ID: {sent_message.sid}")
+
+
+def hospital_email(user, medical, insurance, crash, maps_links: str, hospital_email: str):
+    recipient  = hospital_email
+
+    email_body = f"""
+ROADSOS : EMERGENCY ALERT 
+INCOMING PATIENT : URGENT ATTENTION REQUIRED
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL MEDICAL INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Blood Group         : {medical.bloodGroup}
+Allergies           : {medical.allergies}
+Chronic Conditions  : {medical.chronicConditions}
+Current Medications : {medical.currentmedications}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRASH DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Time of Crash       : {crash.triggered_at}
+Crash Location      : {maps_links}
+G-Force at Impact   : {crash.g_force} g
+Severity Score      : {crash.severity_score}
+Speed at Impact     : {crash.speed_at_impact} km/h
+
+
+This message was generated and sent automatically by ROADSOS APP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+    email = Mail(
+        from_email = FROM_EMAIL,
+        to_email = recipient,
+        subject=f"EMERGENCY — Incoming Patient: {user.FullName} | RoadSOS",
+        plain_text_content=email_body
+    )
+    try: 
+        sendgrid_client = SendGridAPIClient(SENDGRID_API_KEY)
+        sendgrid_client.send(email) 
+        print(f"Email sent to hospital at {recipient}")
+    except Exception as e:
+        print(f"Failed to send email to hospital at {recipient} : {e}")
+
+def notify_contacts(to: str, message: str):
+    print(f"\nNotifying {to}...")
+    
+    try:
+        whatsapp_sms(to, message)
+    except Exception as whatsapp_error:
+        print(f"WhatsApp to {to} failed: {whatsapp_error}")
+    
+    print(f"Finished notifying {to}\n")
+
 
 # ════════════════════════════════════════════════════════════════════════════════
 # API Endpoints 
@@ -207,7 +385,7 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     hashed_pwd = bcrypt.hashpw(user.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
     user_data = user.model_dump(exclude={"password"})
     new_user = DBUser(**user_data, password_hashed=hashed_pwd)
-    
+
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
@@ -229,7 +407,7 @@ async def update_user(user_id: UUID, updated_data: UserUpdate, db: AsyncSession 
     user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # check if the username that is to be updated is already taken or not.
     if updated_data.username and updated_data.username != user.username:
         result2 = await db.execute(select(DBUser).filter(DBUser.username == updated_data.username))
@@ -243,7 +421,7 @@ async def update_user(user_id: UUID, updated_data: UserUpdate, db: AsyncSession 
             raise HTTPException(status_code=400, detail="Phone number already registered")
 
     # exclude_unset=True does the job of patch method, it only updates the fields that the user wants to and it gets sent in the request body and then gets updated back in the server and remaining fields remain unchanged.
-    # setarribute is a built in function in python that takes 3 arguments, the object, the field name and the value and it updates the field of the object with the value.
+    # setarribute is a built in function in python that takes 3 arguments, the object, the field name and the value and it updates the fields of the object with the value.
 
     update_fields = updated_data.model_dump(exclude_unset=True) 
     for field, value in update_fields.items(): 
@@ -289,7 +467,7 @@ async def create_emergency_contact(contact: EmergencyContactCreate, db: AsyncSes
     await db.refresh(new_contact)
     return new_contact 
 
-@app.get("/emergency_contacts/{user_id}", response_model=List[EmergencyContactResponse])
+@app.get("/emergency_contacts/{user_id}/", response_model=List[EmergencyContactResponse])
 async def get_emergencycontacts(user_id: UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(DBEmergencyContact).filter(DBEmergencyContact.user_id == user_id).order_by(DBEmergencyContact.priority_order))
     contacts = result.scalars().all()
@@ -309,6 +487,33 @@ async def delete_emergency_contacts(user_id: UUID, db: AsyncSession = Depends(ge
     await db.commit()
     return {"detail" : "All Emergency contacts deleted successfully"}
 
+@app.put("/emergency_contacts/{user_id}/{contact_id}", response_model=EmergencyContactResponse)
+async def update_emergency_contacts(user_id: UUID, contact_id: UUID, updated_data: EmergencyContactUpdate ,db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DBEmergencyContact).filter(DBEmergencyContact.user_id == user_id, DBEmergencyContact.contact_id == contact_id))
+    contacts = result.scalars().first()
+    if not contacts: 
+        raise HTTPException(status_code=404, detail="Emergency Contacts not found")
+    
+    if updated_data.contact_number and updated_data.contact_number != contacts.contact_number:
+        result2 = await db.execute(select(DBEmergencyContact).filter(DBEmergencyContact.user_id == user_id, DBEmergencyContact.contact_number == updated_data.contact_number))
+        
+        existing_contact = result2.scalars().first()
+        if existing_contact:
+            raise HTTPException(status_code=400, detail="Contact Number already exists")
+    
+    if updated_data.priority_order and updated_data.priority_order != contacts.priority_order:
+        result2 = await db.execute(select(DBEmergencyContact).filter(DBEmergencyContact.user_id == user_id, DBEmergencyContact.priority_order == updated_data.priority_order))
+        existing_priority = result2.scalars().first()
+        if existing_priority:
+            raise HTTPException(status_code=400, detail="Priority already has been set")
+
+    updated_fields = updated_data.model_dump(exclude_unset=True)
+    for field, value in updated_fields.items():
+        setattr(contacts, field, value)
+    await db.commit()
+    await db.refresh(contacts)
+    return contacts
+
 # deleteing a SINGLE emergency contact through a contact_id through a user_id. 
 @app.delete("/emergency_contacts/contact_id/{contact_id}")
 async def delete_emergency_contact_by_id(contact_id: UUID, db: AsyncSession = Depends(get_db)):
@@ -319,7 +524,6 @@ async def delete_emergency_contact_by_id(contact_id: UUID, db: AsyncSession = De
     await db.delete(contact)
     await db.commit()
     return {"detail" : "Emergency contact deleted successfully"}
-
 
 # ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 # insurance info endpoints
@@ -351,6 +555,27 @@ async def get_insurance_info_by_id(insurance_id: UUID, db: AsyncSession = Depend
     if not info:
         raise HTTPException(status_code=404, detail="Insurance info not found")
     return info
+
+# update the insurances of the user
+@app.put("/insurance_info/{user_id}/{insurance_id}", response_model=InsuranceInfoResponse)
+async def update_insurance_info(user_id:UUID, insurance_id:UUID, updated_data : InsuranceInfoUpdate, db:AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DBInsuranceInfo).filter(DBInsuranceInfo.user_id == user_id, DBInsuranceInfo.insurance_id == insurance_id))
+    insurance = result.scalars().first()
+    if not insurance:
+        raise HTTPException(status_code=400, detail="Insurance detail not found")
+
+    if updated_data.insurance_policy_number and updated_data.insurance_policy_number != insurance.insurance_policy_number: 
+        result2 = await db.execute(select(DBInsuranceInfo).filter(DBInsuranceInfo.user_id == user_id, DBInsuranceInfo.insurance_policy_number == updated_data.insurance_policy_number))
+        existing_policy_number = result2.scalars().first()
+        if existing_policy_number:
+            raise HTTPException(status_code=400, detail="Insurance Policy Number already exists")
+    
+    updated_fields = updated_data.model_dump(exclude_unset=True)
+    for field, value in updated_fields.items():
+        setattr(insurance, field, value)
+    await db.commit()
+    await db.refresh(insurance)
+    return insurance
 
 # deletes ALL the insurances of a user
 @app.delete("/insurance_info/{user_id}")
@@ -395,6 +620,20 @@ async def get_medical_info(user_id: UUID, db: AsyncSession = Depends(get_db)):
     medical = result.scalars().all()
     return medical 
 
+@app.put("/medical_info/{user_id}", response_model=MedicalInfoResponse)
+async def update_medical_info(user_id:UUID, updated_data:MedicalInfoUpdate, db:AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DBMedicalInfo).filter(DBMedicalInfo.user_id == user_id))
+    medical = result.scalars().first()
+    if not medical: 
+        raise HTTPException(status_code=400, detail="Medical details not fOund")
+    
+    updated_fields = updated_data.model_dump(exclude_unset=True)
+    for field, value in updated_fields.items():
+        setattr(medical, field, value)
+    await db.commit()
+    await db.refresh(medical)
+    return medical
+
 @app.delete("/medical_info/{user_id}")
 async def delete_medical_info(user_id: UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(DBMedicalInfo).filter(DBMedicalInfo.user_id == user_id))
@@ -405,6 +644,203 @@ async def delete_medical_info(user_id: UUID, db: AsyncSession = Depends(get_db))
         await db.delete(m)
     await db.commit()
     return {"detail" : "Medical info deleted successfully"}
+
+
+# ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+# police record endpoints 
+@app.post("/police_records/", response_model=PoliceRecordResponse)
+async def create_police_record(record: PoliceRecordCreate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DBPoliceRecords).filter(DBPoliceRecords.crash_id == record.crash_id))
+    if result.scalars().first():
+        raise HTTPException(status_code=400, detail="Police record for this crash already exists")
+    
+    call_types = ["app_called", "self_called", "other_called"]
+    if record.call_type not in call_types:
+        raise HTTPException(status_code=400, detail= f"call type must be {call_types}" )
+    
+    crash_result = await db.execute(select(DBcrashrecords).filter(DBcrashrecords.crash_id == record.crash_id))
+    if not crash_result.scalars().first():
+        raise HTTPException(status_code=404, detail = "Crash record Not Found")
+    
+    new_record = DBPoliceRecords(**record.model_dump())
+    db.add(new_record)
+    await db.commit()
+    await db.refresh(new_record)
+    return new_record
+
+@app.get("/police_records/pending", response_model=List[PoliceRecordResponse])
+async def get_pending_records(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DBPoliceRecords).filter(DBPoliceRecords.status == "pending"))
+    records = result.scalars().all()
+
+    if not records:
+        raise HTTPException(status_code=404, detail = "No Pending Cases Found")
+    return records
+
+@app.get("/police_records/resolved", response_model=List[PoliceRecordResponse])
+async def get_resolved_records(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DBPoliceRecords).filter(DBPoliceRecords.status == "resolved"))
+    records = result.scalars().all()
+    if not records:
+        raise HTTPException(status_code=404, detail = "No Resolved cases found")
+    return records  
+
+@app.put("/police_records/{record_id}", response_model=PoliceRecordResponse)
+async def update_police_record(record_id: UUID, updated_data: PoliceRecordUpdate, db: AsyncSession = Depends(get_db)):
+
+    result = await db.execute(select(DBPoliceRecords).filter(DBPoliceRecords.record_id == record_id))
+    record = result.scalars().first()
+    if not record:
+        raise HTTPException(status_code = 404, detail="Police record not found")
+
+    if updated_data.status:
+        status_types = ["pending","active","resolved"]
+        if updated_data.status not in status_types:
+            raise HTTPException(status_code=400, detail=f"Status must be one of these {status_types}")
+
+    if updated_data.status == "active" and record.status == "pending":
+        record.responded_at = datetime.now(timezone.utc).isoformat()
+    if updated_data.status == "resolved" and record.status != "resolved":
+        record.resolved_at = datetime.now(timezone.utc).isoformat()
+
+    updated_fields = updated_data.model_dump(exclude_unset=True)
+    for field, value in updated_fields.items():
+        setattr(record, field, value)
+
+    await db.commit()
+    await db.refresh(record)
+    return record
+
+@app.delete("/police_records/{record_id}")
+async def delete_police_records(record_id: UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DBPoliceRecords).filter(DBPoliceRecords.record_id == record_id))
+    record = result.scalars().first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Police record not found")
+    await db.delete(record)
+    await db.commit()
+    return {"detail" : "Police record deleted successfully"}
+
+# ════════════════════════════════════════════════════════════════════════════════════════════════
+# COMPLETE emergency trigger endpoint
+@app.post("/crash/trigger/{user_id}")
+async def emergency_trigger(user_id: UUID, payload: CrashTriggerPayload, db: AsyncSession = Depends(get_db)):
+
+    user_result = await db.execute(select(DBUser).filter(DBUser.user_id == user_id))
+    user = user_result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    contact_result = await db.execute(select(DBEmergencyContact).filter(DBEmergencyContact.user_id == user_id).order_by(DBEmergencyContact.priority_order))
+    contacts = contact_result.scalars().all()
+    if not contacts:
+        raise HTTPException(status_code=404, detail="Emergency contacts not found")
+
+    medical_result = await db.execute(select(DBMedicalInfo).filter(DBMedicalInfo.user_id == user_id))
+    medical_info = medical_result.scalars().first()
+    if not medical_info:
+        raise HTTPException(status_code=404, detail="Medical info not found")
+
+    insurance_result = await db.execute(select(DBInsuranceInfo).filter(DBInsuranceInfo.user_id == user_id))
+    insurance_info = insurance_result.scalars().first()
+
+    h_name     = "Unknown"
+    h_email    = HOSPITAL_EMAIL    
+    h_number   = ""
+    h_distance = 0.0
+    h_lat      = None
+    h_lon      = None
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(
+                "http://localhost:8001/crash/pois", 
+                params={"lat": payload.latitude, "lon": payload.longitude, "radius": 10000}
+            )
+            poi_data = response.json()
+            places = poi_data.get("places", [])
+            hospitals = [
+                p for p in places
+                if "hospital" in str(p.get("amenity", "")).lower()
+                or "hospital" in str(p.get("type", "")).lower()
+                or "hospital" in str(p.get("category", "")).lower()
+                or "hospital" in str(p.get("name", "")).lower()
+            ]
+            if hospitals:
+                nearest = hospitals[0]
+                h_name     = nearest.get("name", "Unknown")
+                h_distance = nearest.get("distance_m", 0) / 1000
+                h_lat      = nearest.get("lat")
+                h_lon      = nearest.get("lon")
+    except Exception as e:
+        print(f"POI API request failed: {e}")
+  
+    crash_record = DBcrashrecords(
+        user_id=payload.user_id,
+        g_force=payload.g_force,
+        severity_score=payload.severity_score,
+        speed_at_impact=payload.speed_at_impact,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        hospital_name=h_name,                
+        dispatch_hospital_email=h_email,
+        dispatch_hospital_number=h_number,
+        hospital_distance_km=str(h_distance),
+        hospital_latitude=h_lat,
+        hospital_longitude=h_lon,
+        status="active"
+    )
+    db.add(crash_record)
+    await db.commit()
+    await db.refresh(crash_record)
+
+    maps_link = f"https://maps.google.com/?q={payload.latitude},{payload.longitude}"
+
+    contact_message = (
+        f"ROADSOS EMERGENCY ALERT\n"
+        f"{user.FullName} has been in a road accident.\n"
+        f"Location: {maps_link}\n"
+        f"Nearest Hospital: {h_name} ({h_distance:.2f} km away)\n"
+        f"Please contact them immediately.\n\n"
+        f"This message was generated automatically by ROADSOS APP"
+    )
+
+    for contact in contacts:
+        notify_contacts(
+            to=contact.contact_number,
+            message=contact_message
+        )
+
+    hospital_email(
+        user=user,
+        medical=medical_info,
+        insurance=insurance_info,
+        crash=crash_record,
+        maps_links=maps_link,
+        hospital_email=h_email
+    )
+
+    police_record = DBPoliceRecords(
+        crash_id=crash_record.crash_id,
+        user_id=payload.user_id,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        call_type="app_called",
+        status="pending"
+    )
+    db.add(police_record)
+    await db.commit()
+    await db.refresh(police_record)
+
+    return {
+        "status": "emergency triggered",
+        "crash_id": str(crash_record.crash_id),
+        "police_record_id": str(police_record.record_id),
+        "victim_location": maps_link,
+        "nearest_hospital": h_name,
+        "hospital_distance_km": round(h_distance, 2),
+        "contacts_notified": len(contacts)
+    }
 
 
 # authentication using oauth 2.0 with google
@@ -442,7 +878,7 @@ async def google_auth(data: GoogleToken, db: AsyncSession = Depends(get_db)):
         db.add(user)
         await db.commit()
         await db.refresh(user)
-        
+
     access_token = create_access_token(data={"sub": str(user.user_id)})
     refresh_token = create_refresh_token(data={"sub": str(user.user_id)})
-    return {"accessToken": access_token, "refreshToken": refresh_token, "tokenType": "bearer"}
+    return {"accessToken": access_token, "refreshToken": refresh_token, "tokenType": "bearer"}  

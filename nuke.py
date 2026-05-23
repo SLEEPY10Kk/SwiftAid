@@ -8,10 +8,12 @@ engine = create_async_engine(os.getenv('DATABASE_URL'))
 
 async def drop():
     async with engine.begin() as conn:
+        await conn.execute(text('DROP TABLE IF EXISTS "police_records" CASCADE'))
+        await conn.execute(text('DROP TABLE IF EXISTS "crash_records" CASCADE'))
         await conn.execute(text('DROP TABLE IF EXISTS "Insurance_Info" CASCADE'))
         await conn.execute(text('DROP TABLE IF EXISTS "Medical_info" CASCADE'))
         await conn.execute(text('DROP TABLE IF EXISTS "Emergency_contacts" CASCADE'))
-        await conn.execute(text('DROP TABLE IF EXISTS users CASCADE'))
-    print('Done')
+        await conn.execute(text('DROP TABLE IF EXISTS "users" CASCADE'))
+    print('Done — all tables dropped')
 
 asyncio.run(drop())
