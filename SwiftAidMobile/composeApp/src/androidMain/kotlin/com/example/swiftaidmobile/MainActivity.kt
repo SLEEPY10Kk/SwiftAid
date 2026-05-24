@@ -18,10 +18,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var locationHelper: LocationHelper
     private var locationCallback: LocationCallback? = null
 
-    // Store current coords — used by crash detection and sync
-    private var currentLat = 0.0
-    private var currentLon = 0.0
+    // Current coords — updated on every GPS fix, used by crash detection
+    var currentLat = 0.0
+    var currentLon = 0.0
 
+    // Prevent duplicate syncs within the same app session
     private var hasSynced = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,13 +30,12 @@ class MainActivity : AppCompatActivity() {
 
         locationHelper = LocationHelper(this)
 
-        // Request permission if not granted
         if (!locationHelper.hasPermission()) {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
                 ),
                 LOCATION_PERMISSION_REQUEST
             )
@@ -48,11 +48,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Called after user grants/denies permission
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == LOCATION_PERMISSION_REQUEST &&
@@ -66,55 +65,60 @@ class MainActivity : AppCompatActivity() {
     private fun startLocationAndSync() {
         if (BuildConfig.DEBUG) Log.d("RoadSOS", "startLocationAndSync called")
 
-        // 1. Try immediate sync with last known location
+        // DUMMY TESTING: Force a sync with specific coordinates
+        if (BuildConfig.DEBUG) {
+            // Replace these with the coordinates you want to test
+            val dummyLat = 28.6139 // e.g., Delhi
+            val dummyLon = 77.2090
+            Log.d("RoadSOS", "Testing with dummy location: ($dummyLat, $dummyLon)")
+            performSyncAndDisplay(dummyLat, dummyLon)
+        }
+
+        // Immediate sync with last known location (fast, may be slightly stale)
         locationHelper.getLastLocation { lat, lon ->
-            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Last known location obtained: $lat, $lon")
+            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Last known location: $lat, $lon")
             performSyncAndDisplay(lat, lon)
         }
 
-        // 2. Also start live updates to ensure sync happens as soon as a fix is acquired
+        // Live updates — ensures sync fires when fresh GPS fix arrives
         locationCallback = locationHelper.startLiveUpdates { lat, lon ->
-            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Live location obtained: $lat, $lon")
+            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Live location: $lat, $lon")
             performSyncAndDisplay(lat, lon)
-            
-            // Schedule background worker with real coords
             PoiSyncWorker.schedule(this@MainActivity, lat, lon)
         }
     }
 
     private fun performSyncAndDisplay(lat: Double, lon: Double) {
-        // Always update global coords for crash detection
         currentLat = lat
         currentLon = lon
 
-        // Only proceed with the sync check if we have a valid location and haven't synced yet.
-        // This avoids blocking the sync if the first fix is an invalid (0.0, 0.0) point.
+        // Skip if already synced this session or location is invalid
         if (hasSynced || (lat == 0.0 && lon == 0.0)) return
         hasSynced = true
 
         lifecycleScope.launch {
-            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Location fix acquired ($lat, $lon). Checking sync status...")
-            val repo = PoiRepository(this@MainActivity)
-            val cacheValid = repo.isCacheValid()
+            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Sync starting for ($lat, $lon)")
 
-            if (!cacheValid) {
-                if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache invalid, starting sync...")
+            val repo = PoiRepository(this@MainActivity)
+
+            if (!repo.isCacheValid()) {
+                if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache invalid — syncing from server...")
                 repo.syncFromServer(lat, lon)
             } else {
-                if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache still valid, using existing data.")
+                if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache valid — using existing data")
             }
 
-            // Always fetch and display results once we have confirmed our sync state
-            val allPois = repo.getNearestPois(200)
+            val allPois       = repo.getNearestPois(200)
             val nearestByType = repo.getNearestByEmergencyType()
 
             if (BuildConfig.DEBUG) {
                 Log.d("RoadSOS", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-                Log.d("RoadSOS", "Sync location: $lat, $lon")
-                Log.d("RoadSOS", "Total POIs in DB: ${allPois.size}")
-                Log.d("RoadSOS", "Nearest Emergency Services:")
+                Log.d("RoadSOS", "Total POIs in DB : ${allPois.size}")
+                Log.d("RoadSOS", "Emergency services (nearest per type):")
                 nearestByType.forEach { (type, poi) ->
-                    Log.d("RoadSOS", "  [$type] ${poi.name} — ${poi.distance_m}m")
+                    Log.d("RoadSOS", "  [$type] ${poi.name}")
+                    Log.d("RoadSOS", "         ${poi.distance_m}m | ${poi.address}")
+                    Log.d("RoadSOS", "         phone: ${poi.phone ?: "not available"}")
                 }
                 Log.d("RoadSOS", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
             }

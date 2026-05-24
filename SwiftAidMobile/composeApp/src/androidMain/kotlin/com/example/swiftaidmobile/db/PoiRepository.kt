@@ -19,60 +19,52 @@ class PoiRepository(context: Context) {
         private const val SERVER_PORT = 8000
         private val BASE_URL    = "http://$SERVER_IP:$SERVER_PORT"
 
-        // Canonical type map — normalizes all 3 API naming differences into one standard
+        // Canonical type map — normalizes all 3 API naming differences
         val TYPE_ALIASES = mapOf(
-            // Hospitals / Medical
-            "hospital"              to "hospital",
-            "clinic"                to "hospital",
-            "doctors"               to "hospital",
-            "healthcare"            to "hospital",
-            "HLTHSP"                to "hospital",
-            "health"                to "hospital",
-            "nursing_home"          to "hospital",
-            "medical_center"        to "hospital",
-
+            // Medical
+            "hospital"                to "hospital",
+            "clinic"                  to "hospital",
+            "doctors"                 to "hospital",
+            "healthcare"              to "hospital",
+            "HLTHSP"                  to "hospital",
+            "health"                  to "hospital",
+            "nursing_home"            to "hospital",
+            "medical_center"          to "hospital",
             // Police
-            "police"                to "police",
-            "PLCSTN"                to "police",
-
+            "police"                  to "police",
+            "PLCSTN"                  to "police",
             // Fire
-            "fire_station"          to "fire_station",
-            "FIRSTN"                to "fire_station",
-
+            "fire_station"            to "fire_station",
+            "FIRSTN"                  to "fire_station",
             // Pharmacy
-            "pharmacy"              to "pharmacy",
-            "chemist"               to "pharmacy",
-            "MEDST"                 to "pharmacy",
-            "drugstore"             to "pharmacy",
-
+            "pharmacy"                to "pharmacy",
+            "chemist"                 to "pharmacy",
+            "MEDST"                   to "pharmacy",
+            "drugstore"               to "pharmacy",
             // Schools
-            "school"                to "school",
-            "primary_school"        to "school",
-            "secondary_school"      to "school",
-            "SCHOOL"                to "school",
-
+            "school"                  to "school",
+            "primary_school"          to "school",
+            "secondary_school"        to "school",
+            "SCHOOL"                  to "school",
             // Banks / ATM
-            "bank"                  to "bank",
-            "atm"                   to "bank",
-            "BANK"                  to "bank",
-
+            "bank"                    to "bank",
+            "atm"                     to "bank",
+            "BANK"                    to "bank",
             // Fuel
-            "fuel"                  to "fuel",
-            "gas_station"           to "fuel",
-            "PETROL"                to "fuel",
-
+            "fuel"                    to "fuel",
+            "gas_station"             to "fuel",
+            "PETROL"                  to "fuel",
             // Government
             "local_government_office" to "government",
-            "government"            to "government",
-            "townhall"              to "government",
-            "GOVOFF"                to "government",
-
+            "government"              to "government",
+            "townhall"                to "government",
+            "GOVOFF"                  to "government",
             // Post
-            "post_office"           to "post_office",
-            "POSOFF"                to "post_office",
+            "post_office"             to "post_office",
+            "POSOFF"                  to "post_office",
         )
 
-        // Types we actually care about for crash response
+        // Types surfaced in crash response and passed to Routes API
         val EMERGENCY_TYPES = setOf(
             "hospital",
             "police",
@@ -95,7 +87,8 @@ class PoiRepository(context: Context) {
 
     /**
      * Returns one nearest POI per emergency type.
-     * This is what gets passed to the Routes API on crash.
+     * Each entry includes phone number if available.
+     * This map is passed directly to the Routes API on crash.
      */
     suspend fun getNearestByEmergencyType(): Map<String, PoiEntity> {
         val result = mutableMapOf<String, PoiEntity>()
@@ -126,7 +119,7 @@ class PoiRepository(context: Context) {
                 Log.d("RoadSOS", "Response preview: ${json.take(300)}")
             }
 
-            val arr  = JSONArray(json)
+            val arr = JSONArray(json)
             if (BuildConfig.DEBUG) Log.d("RoadSOS", "POIs in response: ${arr.length()}")
 
             if (arr.length() == 0) {
@@ -138,10 +131,14 @@ class PoiRepository(context: Context) {
             val pois = mutableListOf<PoiEntity>()
 
             for (i in 0 until arr.length()) {
-                val obj     = arr.getJSONObject(i)
+                val obj = arr.getJSONObject(i)
+
                 val sources = obj.optJSONArray("sources")
                     ?.let { src -> (0 until src.length()).map { src.getString(it) }.joinToString(",") }
                     ?: "unknown"
+
+                // Phone — present when Google or OSM supplied it, null otherwise
+                val phone = obj.optString("phone", "").ifEmpty { null }
 
                 pois.add(PoiEntity(
                     name       = obj.optString("name", "Unknown"),
@@ -149,29 +146,28 @@ class PoiRepository(context: Context) {
                     lat        = obj.optDouble("lat", 0.0),
                     lon        = obj.optDouble("lon", 0.0),
                     type       = normalizeType(
-                                   obj.optString("type",
-                                   obj.optString("amenity",
-                                   obj.optString("category", "unknown")))
+                                    obj.optString("type",
+                                    obj.optString("amenity",
+                                    obj.optString("category", "unknown")))
                                  ),
                     distance_m = obj.optInt("distance_m", 0),
                     sources    = sources,
                     cached_at  = now,
+                    phone      = phone,
                 ))
             }
 
             dao.clearAll()
             dao.insertAll(pois)
-            if (BuildConfig.DEBUG) Log.d("RoadSOS", "Saved ${pois.size} POIs to Room DB")
 
-            // verify it actually saved
             if (BuildConfig.DEBUG) {
+                Log.d("RoadSOS", "Saved ${pois.size} POIs to Room DB")
                 val verify = dao.getNearest(5)
                 Log.d("RoadSOS", "Verification read: ${verify.size} POIs in DB")
             }
 
         } catch (e: Exception) {
             if (BuildConfig.DEBUG) {
-                e.printStackTrace()
                 Log.e("RoadSOS", "Sync failed: ${e.javaClass.simpleName} — ${e.message}")
             }
         }

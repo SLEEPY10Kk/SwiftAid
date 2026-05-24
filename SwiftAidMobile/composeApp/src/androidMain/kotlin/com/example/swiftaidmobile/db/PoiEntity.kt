@@ -11,7 +11,8 @@ data class PoiEntity(
     val lat:        Double,
     val lon:        Double,
     val type:       String,
-    val sources:    String,   // "mappls,osm"
+    val sources:    String,    // "mappls,osm,google"
     val distance_m: Int,
     val cached_at:  Long,
+    val phone:      String? = null,  // from Google Places / OSM tags.phone
 )
