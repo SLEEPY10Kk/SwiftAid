@@ -1,0 +1,24 @@
+# requirements.txt
+
+numpy
+pandas
+scipy
+matplotlib
+scikit-learn
+xgboost
+joblib
+pyyaml
+fastapi
+uvicorn
+pydantic
+requests
+torch
+torchvision
+torchaudio
+tqdm
+plotly
+opencv-python
+
+# Flutter dependencies are managed separately
+# inside flutter_imu_client/pubspec.yaml
+```
