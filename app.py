@@ -27,14 +27,10 @@ SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
-
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
 TWILIO_WHATSAPP_NUMBER = os.getenv("TWILIO_WHATSAPP_NUMBER")
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-HOSPITAL_EMAIL = os.getenv("HOSPITAL_EMAIL")
-FROM_EMAIL = os.getenv("FROM_EMAIL")
 
 # ════════════════════════════════════════════════════════════════════════════════
 # Database Connection Setup
@@ -164,7 +160,6 @@ class UserUpdate(BaseModel):
     state : Optional[str] = None
     area : Optional[str] = None
 
-
 class DBEmergencyContactBase(BaseModel):
     user_id: UUID
     contact_number: str
@@ -211,7 +206,6 @@ class InsuranceInfoUpdate(BaseModel):
     insurance_type : Optional[str] = None 
     insurance_provider : Optional[str] = None
     insurance_policy_number : Optional[str] = None
-
 
 class PoliceRecordCreate(BaseModel):
     crash_id: UUID
@@ -260,7 +254,7 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(title="RoadSOS Backend",lifespan=lifespan)
 
 async def get_db():
     async with SessionLocal() as session:
@@ -303,13 +297,20 @@ def whatsapp_sms(to: str, message: str):
     )
     print(f"WhatsApp sent to {to} — ID: {sent_message.sid}")
 
-
-def hospital_email(user, medical, insurance, crash, maps_links: str, hospital_email: str):
-    recipient  = hospital_email
-
-    email_body = f"""
-ROADSOS : EMERGENCY ALERT 
+# This function send an emergency message to the hospital dispatch number via whatsapp and SMS.
+def notify_hospital_dispatch(places: list, user, medical, insurance, crash, maps_link: str,contacts: list):
+   
+    dispatch_message = f"""
+ROADSOS : EMERGENCY ALERT
 INCOMING PATIENT : URGENT ATTENTION REQUIRED
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PATIENT DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Full Name           : {user.FullName}
+Phone Number        : {user.PhoneNumber}
+City                : {user.city}
+State               : {user.state}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CRITICAL MEDICAL INFORMATION
@@ -320,53 +321,128 @@ Chronic Conditions  : {medical.chronicConditions}
 Current Medications : {medical.currentmedications}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INSURANCE INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Provider            : {insurance.insurance_provider if insurance else "Not provided"}
+Type                : {insurance.insurance_type if insurance else "Not provided"}
+Policy Number       : {insurance.insurance_policy_number if insurance else "Not provided"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CRASH DETAILS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Time of Crash       : {crash.triggered_at}
-Crash Location      : {maps_links}
+Crash Location      : {maps_link}
 G-Force at Impact   : {crash.g_force} g
 Severity Score      : {crash.severity_score}
-Speed at Impact     : {crash.speed_at_impact} km/h
+Speed at Impact     : {crash.speed_at_impact}
+Crash ID            : {crash.crash_id}
 
-
-This message was generated and sent automatically by ROADSOS APP
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This alert was generated automatically by ROADSOS APP.
 """
-    email = Mail(
-        from_email = FROM_EMAIL,
-        to_email = recipient,
-        subject=f"EMERGENCY — Incoming Patient: {user.FullName} | RoadSOS",
-        plain_text_content=email_body
-    )
-    try: 
-        sendgrid_client = SendGridAPIClient(SENDGRID_API_KEY)
-        sendgrid_client.send(email) 
-        print(f"Email sent to hospital at {recipient}")
-    except Exception as e:
-        print(f"Failed to send email to hospital at {recipient} : {e}")
+
+    # Fetch the nearest hospitals and their dispatch numbers as well 
+    hospitals = [
+        p for p in places
+        if "hospital" in str(p.get("amenity", "")).lower()
+        or "hospital" in str(p.get("type", "")).lower()
+        or "hospital" in str(p.get("category", "")).lower()
+        or "hospital" in str(p.get("name", "")).lower()
+    ]
+
+    hospital_number = None
+    hospital_name = "Unknown Hospital"
+
+    if hospitals:
+        nearest = hospitals[0]
+        hospital_name = nearest.get("name", "Unknown Hospital")
+        hospital_number = (
+            nearest.get("phone") or
+            nearest.get("contact:phone") or
+            nearest.get("phone_number") or
+            nearest.get("telephone")
+        )
+
+    # if the hospital number is available, send them a message via whatsapp and / or direct sms
+    if hospital_number:
+        # Send message via whatsapp
+        try:
+            client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+            client.messages.create(
+                body=dispatch_message,
+                from_="whatsapp:+14155238886",
+                to=f"whatsapp:{hospital_number}"
+            )
+            print(f"Hospital WhatsApp dispatch sent to {hospital_name} at {hospital_number}")
+            return 
+        except Exception as e:
+            print(f"Hospital WhatsApp dispatch failed: {e}")
+
+        # Send message via SMS 
+            try:
+                client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+                sent = client.messages.create(
+                    body=dispatch_message,
+                    from_=TWILIO_PHONE_NUMBER,
+                    to=hospital_number
+                )
+                print(f"Hospital SMS dispatch sent to {hospital_name} at {hospital_number} — ID: {sent.sid}")
+            except Exception as sms_error:
+                print(f"Hospital SMS dispatch failed: {sms_error}")
+
+    print("Both hospital number and email failed — falling back to emergency contacts")
+
+    # if the hospital dispatch is unavailable, send the message to the victims' emergency contacts
+    if contacts:
+        priority_contact = contacts[0]
+
+        fallback_message = (
+            f"ROADSOS CRITICAL ALERT\n\n"
+            f"We could not reach the hospital directly.\n"
+            f"Please SHOW THIS MESSAGE to the hospital staff "
+            f"when you arrive with {user.FullName}.\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"MEDICAL INFO FOR HOSPITAL\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Blood Group  : {medical.bloodGroup}\n"
+            f"Allergies    : {medical.allergies}\n"
+            f"Conditions   : {medical.chronicConditions}\n"
+            f"Medications  : {medical.currentmedications}\n\n"
+            f"Insurance    : {insurance.insurance_provider if insurance else 'Not provided'}\n"
+            f"Policy No    : {insurance.insurance_policy_number if insurance else 'Not provided'}\n\n"
+            f"Crash ID     : {crash.crash_id}\n"
+            f"Location     : {maps_link}\n\n"
+            f"This was generated automatically by ROADSOS APP."
+        )   
+        try:
+            client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+            client.messages.create(
+                body=fallback_message,
+                from_="whatsapp:+14155238886",
+                to=f"whatsapp:{priority_contact.contact_number}"
+            )
+            print(f"Fallback medical bundle sent to priority contact {priority_contact.contact_number}")
+        except Exception as e:
+            print(f"Fallback to emergency contact also failed: {e}")
+    else:
+        print("No emergency contacts available — hospital notification completely failed")
 
 def notify_contacts(to: str, message: str):
     print(f"\nNotifying {to}...")
-    
     try:
         whatsapp_sms(to, message)
     except Exception as whatsapp_error:
         print(f"WhatsApp to {to} failed: {whatsapp_error}")
-    
     print(f"Finished notifying {to}\n")
-
 
 # ════════════════════════════════════════════════════════════════════════════════
 # API Endpoints 
 # ════════════════════════════════════════════════════════════════════════════════
-
 """
 LOL CONCEPTS:
 -- Note: Always use scalars().all() for queries that return multiple records (lists of medical info, insurance info, or emergency contacts for one single user) and scalars().first() for queries that return a single record (fetching a user by primary key).
 
 -- Note : Without async, your server handles one request at a time. If one request is waiting for the database, every other request is stuck waiting too. Async lets the server say "while I'm waiting for the DB, let me handle other requests" and come back when the DB responds.
 """
-
 # ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 # User endpoints
 @app.post("/users/", response_model=UserResponse) 
@@ -645,7 +721,6 @@ async def delete_medical_info(user_id: UUID, db: AsyncSession = Depends(get_db))
     await db.commit()
     return {"detail" : "Medical info deleted successfully"}
 
-
 # ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 # police record endpoints 
 @app.post("/police_records/", response_model=PoliceRecordResponse)
@@ -744,8 +819,7 @@ async def emergency_trigger(user_id: UUID, payload: CrashTriggerPayload, db: Asy
     insurance_result = await db.execute(select(DBInsuranceInfo).filter(DBInsuranceInfo.user_id == user_id))
     insurance_info = insurance_result.scalars().first()
 
-    h_name     = "Unknown"
-    h_email    = HOSPITAL_EMAIL    
+    h_name     = "Unknown"    
     h_number   = ""
     h_distance = 0.0
     h_lat      = None
@@ -782,8 +856,7 @@ async def emergency_trigger(user_id: UUID, payload: CrashTriggerPayload, db: Asy
         speed_at_impact=payload.speed_at_impact,
         latitude=payload.latitude,
         longitude=payload.longitude,
-        hospital_name=h_name,                
-        dispatch_hospital_email=h_email,
+        hospital_name=h_name,
         dispatch_hospital_number=h_number,
         hospital_distance_km=str(h_distance),
         hospital_latitude=h_lat,
@@ -811,13 +884,14 @@ async def emergency_trigger(user_id: UUID, payload: CrashTriggerPayload, db: Asy
             message=contact_message
         )
 
-    hospital_email(
+    notify_hospital_dispatch(
+        places=places,
         user=user,
         medical=medical_info,
         insurance=insurance_info,
         crash=crash_record,
-        maps_links=maps_link,
-        hospital_email=h_email
+        maps_link=maps_link,
+        contacts=contacts 
     )
 
     police_record = DBPoliceRecords(
@@ -828,10 +902,10 @@ async def emergency_trigger(user_id: UUID, payload: CrashTriggerPayload, db: Asy
         call_type="app_called",
         status="pending"
     )
+
     db.add(police_record)
     await db.commit()
     await db.refresh(police_record)
-
     return {
         "status": "emergency triggered",
         "crash_id": str(crash_record.crash_id),
@@ -839,7 +913,8 @@ async def emergency_trigger(user_id: UUID, payload: CrashTriggerPayload, db: Asy
         "victim_location": maps_link,
         "nearest_hospital": h_name,
         "hospital_distance_km": round(h_distance, 2),
-        "contacts_notified": len(contacts)
+        "contacts_notified": len(contacts),
+        "hospital_notified": True if (hospitals) else False,
     }
 
 
