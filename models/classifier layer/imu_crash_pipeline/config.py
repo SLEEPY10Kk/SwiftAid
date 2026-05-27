@@ -26,6 +26,8 @@ class PathConfig:
     risky_windows: Path | None
     checkpoint: Path
     output_dir: Path
+    event_log_dir: Path
+    model_version: str
 
 
 @dataclass(frozen=True)
@@ -96,6 +98,8 @@ def load_config(path: str | Path = "configs/pipeline_config.json") -> PipelineCo
             risky_windows=_optional_path(paths.get("risky_windows")),
             checkpoint=Path(paths["checkpoint"]),
             output_dir=Path(paths.get("output_dir", "outputs")),
+            event_log_dir=Path(paths.get("event_log_dir", "outputs/confirmed_crash_events")),
+            model_version=str(paths.get("model_version", "imu-crash-v1")),
         ),
         model=ModelConfig(**model),
         synthetic_crash=SyntheticCrashConfig(

@@ -1,0 +1,7 @@
+{
+  "selected_classifier": "random_forest",
+  "model_file": "random_forest.joblib",
+  "threshold": 0.54,
+  "purpose": "Use only after the LSTM autoencoder has flagged a candidate anomaly.",
+  "offline_update_policy": "Save confirmed events for later validation/retraining; do not retrain live."
+}

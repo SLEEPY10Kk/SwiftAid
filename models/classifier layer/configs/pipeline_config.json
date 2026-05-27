@@ -7,7 +7,9 @@
     "aggressive_windows": "",
     "risky_windows": "",
     "checkpoint": "C:/Users/HP/Documents/Codex/2026-05-19/files-mentioned-by-the-user-accelerometer/lstm_autoencoder_outputs/best_lstm_autoencoder.pt",
-    "output_dir": "outputs"
+    "output_dir": "outputs",
+    "event_log_dir": "outputs/confirmed_crash_events",
+    "model_version": "imu-crash-v1"
   },
   "model": {
     "input_size": 6,

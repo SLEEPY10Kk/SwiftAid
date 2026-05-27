@@ -96,6 +96,31 @@ def _probabilities(model: object, x: np.ndarray) -> np.ndarray:
     return 1.0 / (1.0 + np.exp(-decision))
 
 
+def load_classifier_bundle(path: Path) -> dict[str, object]:
+    bundle = joblib.load(path)
+    required = {"model", "feature_columns", "threshold"}
+    missing = required - set(bundle)
+    if missing:
+        raise ValueError(f"Classifier bundle is missing required keys: {sorted(missing)}")
+    return bundle
+
+
+def predict_crash_confirmation(feature_table: pd.DataFrame, classifier_bundle: dict[str, object]) -> pd.DataFrame:
+    feature_columns = list(classifier_bundle["feature_columns"])
+    model = classifier_bundle["model"]
+    threshold = float(classifier_bundle["threshold"])
+    x = feature_table.reindex(columns=feature_columns, fill_value=0.0)
+    x = x.replace([np.inf, -np.inf], np.nan).fillna(0.0).to_numpy(dtype=np.float32)
+    probabilities = _probabilities(model, x)
+    predictions = (probabilities >= threshold).astype(np.int64)
+    output = feature_table.copy()
+    output["crash_probability"] = probabilities
+    output["crash_confidence"] = probabilities
+    output["crash_threshold"] = threshold
+    output["confirmed_crash"] = predictions
+    return output
+
+
 def train_confirmation_classifiers(
     feature_table: pd.DataFrame,
     cfg: ClassifierConfig,
@@ -168,6 +193,21 @@ def train_confirmation_classifiers(
     predictions.to_csv(output_dir / "classifier_predictions.csv", index=False)
     with (output_dir / "feature_columns.json").open("w", encoding="utf-8") as handle:
         json.dump(feature_columns, handle, indent=2)
+    best = report[report["status"] == "trained"].sort_values(["f1", "precision", "recall"], ascending=False)
+    if not best.empty:
+        best_name = str(best.iloc[0]["classifier"])
+        with (output_dir / "deployment_manifest.json").open("w", encoding="utf-8") as handle:
+            json.dump(
+                {
+                    "selected_classifier": best_name,
+                    "model_file": f"{best_name}.joblib",
+                    "threshold": float(best.iloc[0]["threshold"]),
+                    "purpose": "Use only after the LSTM autoencoder has flagged a candidate anomaly.",
+                    "offline_update_policy": "Save confirmed events for later validation/retraining; do not retrain live.",
+                },
+                handle,
+                indent=2,
+            )
     plot_classifier_comparison(report, output_dir)
     return report, predictions
 
