@@ -51,7 +51,11 @@ _POI_CACHE:           dict = {}
 
 POI_CACHE_TTL = 1800  # 30 minutes
 
-MAPPLS_KEYWORDS   = "hospital;school;police;bank;post office;government;fire station;pharmacy;fuel"
+MAPPLS_KEYWORDS = (
+    "hospital;school;police;bank;post office;"
+    "government;fire station;pharmacy;fuel;"
+    "car repair;garage;mechanic"
+)
 MAPPLS_TOKEN_URL  = "https://outpost.mapmyindia.com/api/security/oauth/token"
 MAPPLS_NEARBY_URL = "https://atlas.mappls.com/api/places/nearby/json"
 
@@ -97,9 +101,22 @@ TYPE_ALIASES: dict[str, str] = {
     # Post
     "post_office":             "post_office",
     "POSOFF":                  "post_office",
+    # Mechanics / vehicle repair
+    "car_repair":               "mechanic",
+    "vehicle_repair":           "mechanic",
+    "auto_repair":              "mechanic",
+    "garage":                   "mechanic",
+    "mechanic":                 "mechanic",
 }
 
-EMERGENCY_TYPES = {"hospital", "police", "fire_station", "pharmacy", "fuel"}
+EMERGENCY_TYPES = {
+    "hospital",
+    "police",
+    "fire_station",
+    "pharmacy",
+    "fuel",
+    "mechanic"
+}
 
 
 def normalize_type(raw: str) -> str:
@@ -268,6 +285,7 @@ async def fetch_google_nearby(lat: float, lon: float) -> list:
             "gas_station",
             "post_office",
             "local_government_office",
+            "car_repair",
         ],
         "maxResultCount": 20,
         "locationRestriction": {
