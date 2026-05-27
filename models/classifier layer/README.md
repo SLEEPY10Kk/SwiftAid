@@ -1,90 +1,29 @@
-# IMU Crash Detection Pipeline — Stages 2–4
+# Phone IMU Crash Detection Pipeline
 
-Production-quality Python pipeline for phone IMU-based vehicle crash detection.
+Production-style stages 2-4 for a phone IMU crash detection system using accelerometer and gyroscope windows shaped `[num_windows, timesteps, features]` with features `ax, ay, az, gx, gy, gz`.
 
-## Architecture
+The default config points at the latest LSTM autoencoder/checkpoint and normalized windows from the prior IMU workspace:
 
-```
-crash_detection/
-├── config/
-│   └── config.py              ← All hyperparameters, physics constants, paths
-├── utils/
-│   └── utils.py               ← Seeds, logging, magnitude/jerk helpers
-├── augmentation/
-│   └── crash_generator.py     ← STAGE 2: Synthetic crash generation
-├── models/
-│   └── autoencoder.py         ← LSTM Autoencoder definition + loader
-├── evaluation/
-│   └── anomaly_evaluator.py   ← STAGE 3: Reconstruction error, thresholds, metrics
-├── classifiers/
-│   ├── feature_engineering.py ← STAGE 4: IMU feature extraction
-│   └── crash_classifier.py    ← STAGE 4: RF / XGBoost / MLP classifiers
-├── outputs/
-│   ├── plots/                 ← All generated figures
-│   └── reports/               ← CSV metric reports
-├── models/                    ← Saved model checkpoints
-└── run_pipeline.py            ← End-to-end runner
+`C:/Users/HP/Documents/Codex/2026-05-19/files-mentioned-by-the-user-accelerometer/lstm_autoencoder_outputs/best_lstm_autoencoder.pt`
+
+## Run
+
+```powershell
+C:\Users\HP\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe scripts/run_full_pipeline.py --config configs/pipeline_config.json
 ```
 
-## Quick Start
+Or run individual stages:
 
-```bash
-# Install dependencies
-pip install torch scikit-learn numpy pandas matplotlib scipy xgboost
-
-# Run with a trained autoencoder checkpoint
-python run_pipeline.py --autoencoder models/autoencoder.pt
-
-# Smoke-test without a checkpoint (random model, structure test only)
-python run_pipeline.py
+```powershell
+C:\Users\HP\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe scripts/run_stage2_generate_crashes.py
+C:\Users\HP\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe scripts/run_stage3_anomaly_evaluation.py
+C:\Users\HP\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe scripts/run_stage4_confirmation_classifier.py
 ```
 
-## Stage 2 — Synthetic Crash Generation
+## Outputs
 
-`SyntheticCrashGenerator` produces four crash types at four severity levels:
+- `outputs/stage2_synthetic_crashes`: synthetic crash windows, labels, metadata, and example plots.
+- `outputs/stage3_anomaly_evaluation`: reconstruction scores, thresholds, temporal profiles, metrics, and PCA/error plots.
+- `outputs/stage4_confirmation_classifier`: engineered features, trained classifier checkpoints, reports, predictions, feature importances, and comparison plots.
 
-| Type          | Primary Signal           | Key Physics Feature          |
-|---------------|--------------------------|------------------------------|
-| Frontal       | −acc_y spike             | Half-sine impulse + crumple  |
-| Side          | +acc_x spike             | Yaw gyro spike (gyro_z)      |
-| Rollover      | Sustained gyro_x/y       | Continuous roll rotation     |
-| Abrupt Stop   | −acc_y only              | Minimal rotation             |
-
-All crashes use: half-sine impact pulse → exponentially decaying oscillation.
-
-Severity levels: `low (0.4×)`, `medium (0.7×)`, `high (1.0×)`, `extreme (1.4×)`.
-
-## Stage 3 — Anomaly Evaluation
-
-Autoencoder trained on normal driving; anomaly score = reconstruction MSE.
-
-Three threshold strategies:
-- **Percentile**: `p`-th percentile of normal errors (controls FPR directly)
-- **Sigma**: `mean + k·std` of normal errors  
-- **Adaptive**: rolling mean + k·std (for online/streaming use)
-
-Outputs: error CSVs, ROC curve, PCA/t-SNE latent space, per-feature error bars.
-
-## Stage 4 — Crash Confirmation Classifier
-
-Second-stage classifier using engineered features:
-- Autoencoder reconstruction error (overall + per-feature)
-- Peak/mean acceleration and gyroscope magnitudes
-- Jerk (d(acc)/dt) — peak, energy
-- Impact duration above threshold
-- Rotational energy per axis
-- Statistical moments (mean, std, skew, kurtosis) per IMU axis
-- FFT dominant frequency, spectral entropy, high-frequency energy
-
-Three classifiers: **Random Forest**, **XGBoost**, **MLP (PyTorch)**.
-
-Threshold tuning minimises false positives at configurable FPR target (default 5%).
-
-## Configuration
-
-All parameters in `config/config.py`:
-- `CRASH_PHYSICS` — peak g values per crash type
-- `CRASH_SEVERITY_LEVELS` — severity scale factors
-- `ANOMALY` — threshold percentile, sigma multiplier
-- `CLASSIFIER` — model hyperparameters, FP rate target
-- `AUTOENCODER` — hidden size, latent size, checkpoint path
+If real aggressive/risky window files are available, set their paths in `configs/pipeline_config.json`. When absent, the evaluation creates deterministic risky driving surrogates from normal windows for a complete smoke-testable pipeline.

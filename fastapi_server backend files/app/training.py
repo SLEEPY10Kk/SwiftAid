@@ -94,6 +94,52 @@ def compute_adaptive_threshold(errors: np.ndarray, percentile: float) -> tuple[f
     return threshold, method
 
 
+def validate_candidate_model(
+    threshold: float,
+    validation_loss: float,
+    active_metadata: dict | None,
+    settings: Settings,
+) -> tuple[bool, list[str]]:
+    """
+    Decide whether a retrained model is safe to activate and push.
+
+    The first model version can be promoted if it is finite and inside absolute
+    bounds. Later versions must also stay close to the current active threshold
+    and avoid a large validation-loss regression.
+    """
+    reasons = []
+
+    if not np.isfinite(threshold):
+        reasons.append("threshold is not finite")
+    if not np.isfinite(validation_loss):
+        reasons.append("validation loss is not finite")
+    if threshold < settings.min_threshold:
+        reasons.append(f"threshold {threshold:.8f} is below minimum {settings.min_threshold:.8f}")
+    if threshold > settings.max_threshold:
+        reasons.append(f"threshold {threshold:.8f} is above maximum {settings.max_threshold:.8f}")
+
+    if active_metadata:
+        active_threshold = float(active_metadata["threshold"])
+        allowed_delta = abs(active_threshold) * settings.max_threshold_change_ratio
+        threshold_delta = abs(threshold - active_threshold)
+        if threshold_delta > allowed_delta:
+            reasons.append(
+                "threshold changed too much "
+                f"({threshold_delta:.8f} > allowed {allowed_delta:.8f})"
+            )
+
+        active_val_loss = active_metadata.get("validation_loss")
+        if active_val_loss is not None:
+            max_allowed_loss = float(active_val_loss) * (1.0 + settings.max_validation_loss_increase_ratio)
+            if validation_loss > max_allowed_loss:
+                reasons.append(
+                    "validation loss regressed too much "
+                    f"({validation_loss:.8f} > allowed {max_allowed_loss:.8f})"
+                )
+
+    return len(reasons) == 0, reasons
+
+
 def retrain_autoencoder(
     store: SensorWindowStore,
     registry: ModelRegistry,
@@ -145,6 +191,13 @@ def retrain_autoencoder(
 
     val_errors = reconstruction_errors(model, val_windows, settings.batch_size, device)
     threshold, method = compute_adaptive_threshold(val_errors, settings.threshold_percentile)
+    active_metadata = registry.get_active()
+    should_activate, rejection_reasons = validate_candidate_model(
+        threshold=threshold,
+        validation_loss=best_val_loss,
+        active_metadata=active_metadata,
+        settings=settings,
+    )
 
     metadata = registry.save_version(
         model=model.cpu(),
@@ -160,9 +213,25 @@ def retrain_autoencoder(
             "dropout": settings.dropout,
             "timesteps": settings.timesteps,
             "features": list(settings.features),
+            "safety_checks": {
+                "min_threshold": settings.min_threshold,
+                "max_threshold": settings.max_threshold,
+                "max_threshold_change_ratio": settings.max_threshold_change_ratio,
+                "max_validation_loss_increase_ratio": settings.max_validation_loss_increase_ratio,
+            },
         },
-        activate=activate,
+        activate=activate and should_activate,
     )
+    if not should_activate:
+        return RetrainResult(
+            status="rejected",
+            message=(
+                f"Saved candidate model {metadata['version']} but did not activate it: "
+                + "; ".join(rejection_reasons)
+            ),
+            metadata=metadata,
+        )
+
     return RetrainResult(
         status="completed",
         message=f"Created model version {metadata['version']} with threshold {threshold:.8f}.",

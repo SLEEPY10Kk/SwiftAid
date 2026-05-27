@@ -25,6 +25,12 @@ class Settings:
     retrain_interval_minutes: int = int(os.getenv("IMU_RETRAIN_INTERVAL_MINUTES", "1440"))
     min_retrain_windows: int = int(os.getenv("IMU_MIN_RETRAIN_WINDOWS", "500"))
     threshold_percentile: float = float(os.getenv("IMU_THRESHOLD_PERCENTILE", "99.0"))
+    min_threshold: float = float(os.getenv("IMU_MIN_THRESHOLD", "0.000001"))
+    max_threshold: float = float(os.getenv("IMU_MAX_THRESHOLD", "10.0"))
+    max_threshold_change_ratio: float = float(os.getenv("IMU_MAX_THRESHOLD_CHANGE_RATIO", "0.50"))
+    max_validation_loss_increase_ratio: float = float(
+        os.getenv("IMU_MAX_VALIDATION_LOSS_INCREASE_RATIO", "0.10")
+    )
     max_epochs: int = int(os.getenv("IMU_RETRAIN_MAX_EPOCHS", "30"))
     batch_size: int = int(os.getenv("IMU_BATCH_SIZE", "64"))
     learning_rate: float = float(os.getenv("IMU_LEARNING_RATE", "0.001"))

@@ -179,14 +179,28 @@ def main():
     model = load_model(CHECKPOINT_PATH, config, device)
 
     errors, thresholds, labels = score_pipeline(
-        model,
-        test,
-        val,
-        config,
-        device,
+    model,
+    test,
+    val,
+    config,
+    device,
+    )
+
+    final_threshold = min(
+        thresholds["mean_plus_3std"],
+        thresholds["percentile"],
     )
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    np.savez(
+        OUTPUT_DIR / "thresholds.npz",
+        mean=thresholds["mean"],
+        std=thresholds["std"],
+        mean_plus_3std=thresholds["mean_plus_3std"],
+        percentile=thresholds["percentile"],
+        final_threshold=final_threshold,
+    )
 
     print("\n--- THRESHOLDS ---")
     print(thresholds)

@@ -1,0 +1,4 @@
+classifier,status,accuracy,precision,recall,f1,threshold,tn,fp,fn,tp
+random_forest,trained,1.0,1.0,1.0,1.0,0.54,16.0,0.0,0.0,2.0
+mlp,trained,0.9444444444444444,1.0,0.5,0.6666666666666666,0.7480676174163818,16.0,0.0,1.0,1.0
+xgboost,skipped_missing_dependency,,,,,,,,,

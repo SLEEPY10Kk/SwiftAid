@@ -1,0 +1,11 @@
+{
+  "threshold": 15.9910306982433,
+  "precision_anomaly": 0.5714285714285714,
+  "recall_anomaly": 0.56,
+  "f1_anomaly": 0.5656565656565656,
+  "precision_crash": 0.16326530612244897,
+  "recall_crash": 1.0,
+  "f1_crash": 0.2807017543859649,
+  "roc_auc_anomaly": 0.5342857142857143,
+  "roc_auc_crash": 0.861111111111111
+}

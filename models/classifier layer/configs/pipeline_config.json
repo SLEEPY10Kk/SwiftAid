@@ -1,0 +1,43 @@
+{
+  "seed": 42,
+  "sample_rate_hz": 50.0,
+  "feature_columns": ["ax", "ay", "az", "gx", "gy", "gz"],
+  "paths": {
+    "normal_windows": "C:/Users/HP/Documents/Codex/2026-05-19/files-mentioned-by-the-user-accelerometer/normalized_imu/test_windows_zscore.npy",
+    "aggressive_windows": "",
+    "risky_windows": "",
+    "checkpoint": "C:/Users/HP/Documents/Codex/2026-05-19/files-mentioned-by-the-user-accelerometer/lstm_autoencoder_outputs/best_lstm_autoencoder.pt",
+    "output_dir": "outputs"
+  },
+  "model": {
+    "input_size": 6,
+    "hidden_size": 64,
+    "latent_size": 16,
+    "num_layers": 2,
+    "dropout": 0.2,
+    "batch_size": 64
+  },
+  "synthetic_crash": {
+    "crash_fraction": 0.4,
+    "severity_levels": ["minor", "moderate", "severe"],
+    "min_impact_duration_s": 0.08,
+    "max_impact_duration_s": 0.28,
+    "post_impact_duration_s": 1.2,
+    "max_delta_per_step": 2.75,
+    "sensor_noise_scale": 0.012
+  },
+  "thresholds": {
+    "percentile": 99.0,
+    "std_multiplier": 3.0,
+    "adaptive_window": 25,
+    "adaptive_z": 3.5
+  },
+  "classifier": {
+    "test_size": 0.25,
+    "crash_probability_threshold": 0.5,
+    "max_false_positive_rate": 0.02,
+    "random_forest_estimators": 300,
+    "mlp_hidden_layers": [64, 32],
+    "mlp_max_iter": 500
+  }
+}
