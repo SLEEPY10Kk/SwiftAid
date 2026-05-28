@@ -14,13 +14,18 @@ Keys required in .env:
 from __future__ import annotations
 
 import asyncio
+import gzip
+import json
 import os
+import re
 import time
 import statistics
 from math import radians, sin, cos, sqrt, atan2
+from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
+from fastapi.responses import FileResponse
 from rapidfuzz import fuzz
 from dotenv import load_dotenv
 
@@ -35,6 +40,9 @@ MAPPLS_CLIENT_SECRET = os.getenv("MAPPLS_CLIENT_SECRET", "")
 GOOGLE_API_KEY       = os.getenv("GOOGLE_API_KEY", "")
 
 DEFAULT_RADIUS = 10000
+CITY_EXPORT_RADIUS = 50000
+CITY_EXPORT_DIR = Path(os.getenv("CITY_EXPORT_DIR", "city_poi_exports"))
+CITY_EXPORT_TTL = int(os.getenv("CITY_EXPORT_TTL", "86400"))
 
 # ── Overpass mirrors ──────────────────────────────────────────────────────────
 OVERPASS_ENDPOINTS = [
@@ -48,6 +56,7 @@ _MAPPLS_TOKEN_CACHE:  dict = {"token": None, "expires_at": 0}
 _MAPPLS_NEARBY_CACHE: dict = {}
 _GOOGLE_CACHE:        dict = {}
 _POI_CACHE:           dict = {}
+_CITY_EXPORT_JOBS:    dict = {}
 
 POI_CACHE_TTL = 1800  # 30 minutes
 
@@ -118,6 +127,22 @@ EMERGENCY_TYPES = {
     "mechanic"
 }
 
+OSM_CITY_AMENITIES = {
+    "hospital",
+    "clinic",
+    "doctors",
+    "pharmacy",
+    "police",
+    "fire_station",
+    "fuel",
+    "car_repair",
+    "school",
+    "bank",
+    "atm",
+    "post_office",
+    "townhall",
+}
+
 
 def normalize_type(raw: str) -> str:
     return TYPE_ALIASES.get(raw.strip(), raw.lower().strip())
@@ -153,6 +178,41 @@ def _extract_coords(p: dict, fallback_lat: float, fallback_lon: float):
             try: plon = float(v); break
             except (TypeError, ValueError): pass
     return plat or fallback_lat, plon or fallback_lon
+
+
+def _safe_slug(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or "city"
+
+
+def _city_export_key(city: str, lat: float, lon: float, radius: int) -> str:
+    return f"{_safe_slug(city)}-{round(lat, 3)}-{round(lon, 3)}-{int(radius)}m"
+
+
+def _city_export_path(export_key: str) -> Path:
+    return CITY_EXPORT_DIR / f"{export_key}.json.gz"
+
+
+def _city_export_metadata_path(export_key: str) -> Path:
+    return CITY_EXPORT_DIR / f"{export_key}.meta.json"
+
+
+def _load_city_export_metadata(export_key: str) -> dict | None:
+    path = _city_export_metadata_path(export_key)
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _city_export_is_fresh(export_key: str) -> bool:
+    metadata = _load_city_export_metadata(export_key)
+    export_path = _city_export_path(export_key)
+    if not metadata or not export_path.exists():
+        return False
+    return (time.time() - float(metadata.get("created_at", 0))) < CITY_EXPORT_TTL
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -393,6 +453,121 @@ async def fetch_osm_nearby(lat: float, lon: float, radius: int = DEFAULT_RADIUS)
     return []
 
 
+def _format_osm_address(tags: dict) -> str:
+    if tags.get("addr:full"):
+        return tags["addr:full"]
+    parts = [
+        tags.get("addr:housenumber"),
+        tags.get("addr:street"),
+        tags.get("addr:suburb"),
+        tags.get("addr:city"),
+        tags.get("addr:postcode"),
+    ]
+    return ", ".join(str(part) for part in parts if part)
+
+
+async def fetch_osm_city_pois(lat: float, lon: float, radius: int = CITY_EXPORT_RADIUS) -> list:
+    r = int(radius)
+    amenity_regex = "|".join(sorted(OSM_CITY_AMENITIES))
+    query = f"""
+    [out:json][timeout:180];
+    (
+      node["amenity"~"^({amenity_regex})$"](around:{r},{lat},{lon});
+      way["amenity"~"^({amenity_regex})$"](around:{r},{lat},{lon});
+      relation["amenity"~"^({amenity_regex})$"](around:{r},{lat},{lon});
+      node["shop"~"^(car_repair|chemist)$"](around:{r},{lat},{lon});
+      way["shop"~"^(car_repair|chemist)$"](around:{r},{lat},{lon});
+      relation["shop"~"^(car_repair|chemist)$"](around:{r},{lat},{lon});
+    );
+    out center tags;
+    """
+    headers = {"User-Agent": "RoadSOS/1.0 city-export"}
+    async with httpx.AsyncClient(timeout=190, headers=headers) as client:
+        for endpoint in OVERPASS_ENDPOINTS:
+            try:
+                resp = await client.post(endpoint, data={"data": query})
+                if resp.status_code != 200:
+                    continue
+                pois = []
+                for el in resp.json().get("elements", []):
+                    tags = el.get("tags", {})
+                    center = el.get("center", {})
+                    elat = el.get("lat") or center.get("lat")
+                    elon = el.get("lon") or center.get("lon")
+                    if elat is None or elon is None:
+                        continue
+                    raw_type = tags.get("amenity") or tags.get("shop") or "unknown"
+                    pois.append({
+                        "source_id": f"osm:{el.get('type')}:{el.get('id')}",
+                        "osm_type": el.get("type"),
+                        "osm_id": el.get("id"),
+                        "name": tags.get("name", "Unnamed"),
+                        "lat": elat,
+                        "lon": elon,
+                        "type": normalize_type(raw_type),
+                        "raw_type": raw_type,
+                        "address": _format_osm_address(tags),
+                        "phone": tags.get("phone") or tags.get("contact:phone"),
+                        "distance_m": round(haversine(lat, lon, elat, elon)),
+                        "opening_hours": tags.get("opening_hours"),
+                        "website": tags.get("website") or tags.get("contact:website"),
+                        "source": "osm",
+                    })
+                return pois
+            except Exception:
+                continue
+    return []
+
+
+async def build_city_poi_export(
+    city: str,
+    lat: float,
+    lon: float,
+    radius: int = CITY_EXPORT_RADIUS,
+    force: bool = False,
+) -> dict:
+    export_key = _city_export_key(city, lat, lon, radius)
+    export_path = _city_export_path(export_key)
+    metadata_path = _city_export_metadata_path(export_key)
+
+    if not force and _city_export_is_fresh(export_key):
+        metadata = _load_city_export_metadata(export_key) or {}
+        metadata["download_url"] = f"/city/osm-pois/{export_key}/download"
+        return metadata
+
+    CITY_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+    _CITY_EXPORT_JOBS[export_key] = {"status": "running", "started_at": time.time()}
+    pois = await fetch_osm_city_pois(lat, lon, radius)
+    pois.sort(key=lambda p: (p.get("type", ""), p.get("distance_m") or 0))
+    payload = {
+        "schema_version": 1,
+        "city": city,
+        "center": {"lat": lat, "lon": lon},
+        "radius_m": int(radius),
+        "source": "osm_overpass",
+        "generated_at": time.time(),
+        "count": len(pois),
+        "pois": pois,
+    }
+    with gzip.open(export_path, "wt", encoding="utf-8") as gz:
+        json.dump(payload, gz, ensure_ascii=False, separators=(",", ":"))
+    metadata = {
+        "export_key": export_key,
+        "city": city,
+        "center": {"lat": lat, "lon": lon},
+        "radius_m": int(radius),
+        "count": len(pois),
+        "created_at": payload["generated_at"],
+        "expires_in_s": CITY_EXPORT_TTL,
+        "file_name": export_path.name,
+        "file_size_bytes": export_path.stat().st_size,
+        "download_url": f"/city/osm-pois/{export_key}/download",
+    }
+    metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    _CITY_EXPORT_JOBS[export_key] = {"status": "ready", **metadata}
+    return metadata
+
+
 async def fetch_osm_by_name(name: str, lat: float, lon: float) -> list:
     STOP = {"primary", "school", "college", "hospital", "district",
             "government", "the", "and", "of", "india", "national"}
@@ -561,6 +736,12 @@ async def _inventory_logic() -> dict:
         ],
         "type_normalization": TYPE_ALIASES,
         "emergency_types":    list(EMERGENCY_TYPES),
+        "city_export": {
+            "source": "OSM Overpass",
+            "radius_m": CITY_EXPORT_RADIUS,
+            "format": "gzip-compressed JSON",
+            "ttl_s": CITY_EXPORT_TTL,
+        },
     }
 
 
@@ -606,6 +787,20 @@ async def _schema_logic() -> dict:
             {"canonical": "feature_type", "mappls": "keywords[0]",  "google": "types[0]",            "osm": "tags.amenity"},
             {"canonical": "address",      "mappls": "placeAddress", "google": "formattedAddress",    "osm": "tags.addr:full"},
             {"canonical": "phone",        "mappls": "—",            "google": "nationalPhoneNumber", "osm": "tags.phone"},
+        ],
+        "city_export_mapping": [
+            {"canonical": "source_id",     "osm": "osm:{type}:{id}"},
+            {"canonical": "osm_type",      "osm": "element.type"},
+            {"canonical": "osm_id",        "osm": "element.id"},
+            {"canonical": "name",          "osm": "tags.name"},
+            {"canonical": "lat",           "osm": "lat / center.lat"},
+            {"canonical": "lon",           "osm": "lon / center.lon"},
+            {"canonical": "type",          "osm": "normalized amenity/shop"},
+            {"canonical": "raw_type",      "osm": "tags.amenity / tags.shop"},
+            {"canonical": "address",       "osm": "addr:* tags"},
+            {"canonical": "phone",         "osm": "tags.phone / tags.contact:phone"},
+            {"canonical": "opening_hours", "osm": "tags.opening_hours"},
+            {"canonical": "website",       "osm": "tags.website / tags.contact:website"},
         ],
     }
 
@@ -733,9 +928,12 @@ app = FastAPI(
         "**Crash flow:** `POST /crash/warm-cache` on app launch. "
         "On crash call `GET /crash/pois` — returns cached results instantly "
         "or waterfalls Mappls → OSM → Google.\n\n"
-        "Response includes `nearest_by_type` with phone numbers for direct Routes API use."
+        "Response includes `nearest_by_type` with phone numbers for direct Routes API use.\n\n"
+        "**City offline flow:** `POST /city/osm-pois/export` builds a 50 km OSM-only "
+        "gzip JSON dataset for the user's city, then the phone downloads it from "
+        "`GET /city/osm-pois/{export_key}/download`."
     ),
-    version="2.1.0",
+    version="2.2.0",
 )
 
 
@@ -748,6 +946,7 @@ async def health():
         "mappls_configured": bool(MAPPLS_CLIENT_ID and MAPPLS_CLIENT_SECRET),
         "google_configured": bool(GOOGLE_API_KEY),
         "poi_cache_entries": len(_POI_CACHE),
+        "city_exports":      len(list(CITY_EXPORT_DIR.glob("*.json.gz"))) if CITY_EXPORT_DIR.exists() else 0,
     }
 
 
@@ -802,6 +1001,45 @@ async def cache_status(
         "expires_in_s": round(POI_CACHE_TTL - age),
     }
 
+
+# ── City offline export ───────────────────────────────────────────────────────
+
+@app.post("/city/osm-pois/export", tags=["City Offline"])
+async def export_city_osm_pois(
+    city:   str   = Query(..., description="Display name for the user's city"),
+    lat:    float = Query(..., description="City/user latitude"),
+    lon:    float = Query(..., description="City/user longitude"),
+    radius: int   = Query(CITY_EXPORT_RADIUS, ge=1000, le=50000, description="Export radius in metres, max 50 km"),
+    force:  bool  = Query(False, description="Regenerate even if a fresh gzip already exists"),
+):
+    """
+    Builds a gzip-compressed JSON file with OSM POIs around the user's city.
+    The mobile app can download and import this into RoomDB for offline use.
+    """
+    return await build_city_poi_export(city, float(lat), float(lon), int(radius), bool(force))
+
+
+@app.get("/city/osm-pois/{export_key}/status", tags=["City Offline"])
+async def city_osm_export_status(export_key: str):
+    metadata = _load_city_export_metadata(export_key)
+    if metadata:
+        metadata["download_url"] = f"/city/osm-pois/{export_key}/download"
+        return {"status": "ready", **metadata}
+    if export_key in _CITY_EXPORT_JOBS:
+        return _CITY_EXPORT_JOBS[export_key]
+    return {"status": "missing", "export_key": export_key}
+
+
+@app.get("/city/osm-pois/{export_key}/download", tags=["City Offline"])
+async def download_city_osm_export(export_key: str):
+    export_path = _city_export_path(export_key)
+    if not export_path.exists():
+        raise HTTPException(status_code=404, detail="City POI export not found")
+    return FileResponse(
+        path=export_path,
+        media_type="application/gzip",
+        filename=export_path.name,
+    )
 
 # ── Fetch ─────────────────────────────────────────────────────────────────────
 

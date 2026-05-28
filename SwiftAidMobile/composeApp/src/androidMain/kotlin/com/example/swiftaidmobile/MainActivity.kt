@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.swiftaidmobile.db.CitySyncWorker
 import com.example.swiftaidmobile.db.PoiRepository
 import com.example.swiftaidmobile.db.PoiSyncWorker
 import com.google.android.gms.location.LocationCallback
@@ -65,15 +66,6 @@ class MainActivity : AppCompatActivity() {
     private fun startLocationAndSync() {
         if (BuildConfig.DEBUG) Log.d("RoadSOS", "startLocationAndSync called")
 
-        // DUMMY TESTING: Force a sync with specific coordinates
-        if (BuildConfig.DEBUG) {
-            // Replace these with the coordinates you want to test
-            val dummyLat = 28.6139 // e.g., Delhi
-            val dummyLon = 77.2090
-            Log.d("RoadSOS", "Testing with dummy location: ($dummyLat, $dummyLon)")
-            performSyncAndDisplay(dummyLat, dummyLon)
-        }
-
         // Immediate sync with last known location (fast, may be slightly stale)
         locationHelper.getLastLocation { lat, lon ->
             if (BuildConfig.DEBUG) Log.d("RoadSOS", "Last known location: $lat, $lon")
@@ -108,16 +100,19 @@ class MainActivity : AppCompatActivity() {
                 if (BuildConfig.DEBUG) Log.d("RoadSOS", "Cache valid — using existing data")
             }
 
+            // Also schedule city-wide offline sync (e.g. for Ahmedabad for testing)
+            CitySyncWorker.schedule(this@MainActivity, "Ahmedabad", lat, lon)
+
             val allPois       = repo.getNearestPois(200)
-            val nearestByType = repo.getNearestByEmergencyType()
+            val nearestByType = repo.getNearestByEmergencyType(lat, lon)
 
             if (BuildConfig.DEBUG) {
                 Log.d("RoadSOS", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                 Log.d("RoadSOS", "Total POIs in DB : ${allPois.size}")
-                Log.d("RoadSOS", "Emergency services (nearest per type):")
+                Log.d("RoadSOS", "Emergency services (nearest per type, incl. offline):")
                 nearestByType.forEach { (type, poi) ->
                     Log.d("RoadSOS", "  [$type] ${poi.name}")
-                    Log.d("RoadSOS", "         ${poi.distance_m}m | ${poi.address}")
+                    Log.d("RoadSOS", "         ${poi.distance_m}m | source: ${poi.sources}")
                     Log.d("RoadSOS", "         phone: ${poi.phone ?: "not available"}")
                 }
                 Log.d("RoadSOS", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
