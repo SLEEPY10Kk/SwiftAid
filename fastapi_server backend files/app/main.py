@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
 
 from .config import settings
+from .database import init_db
 from .inference import CrashDetectionService, ModelNotLoadedError
 from .notifier import ConfigBroadcaster
 from .registry import ModelRegistry
@@ -33,6 +34,7 @@ periodic_retrain_task: asyncio.Task | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global periodic_retrain_task
+    init_db()
     try:
         load_active_or_default_model()
     except FileNotFoundError as exc:

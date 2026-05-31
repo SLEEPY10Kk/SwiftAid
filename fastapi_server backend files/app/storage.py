@@ -6,7 +6,10 @@ from pathlib import Path
 from uuid import uuid4
 
 import numpy as np
+from sqlalchemy import select
 
+from .database import SessionLocal, database_enabled
+from .db_models import IMUWindowRecord
 from .schemas import WindowUploadRequest
 
 
@@ -48,9 +51,47 @@ class SensorWindowStore:
         with self.metadata_path.open("a", encoding="utf-8") as file:
             file.write(json.dumps(metadata) + "\n")
 
+        if database_enabled():
+            assert SessionLocal is not None
+            with SessionLocal() as session:
+                session.add(
+                    IMUWindowRecord(
+                        window_id=window_id,
+                        device_id=request.device_id,
+                        storage_path=str(storage_path),
+                        num_samples=len(request.samples),
+                        model_version=request.model_version,
+                        anomaly_score=request.anomaly_score,
+                        predicted_anomaly=request.predicted_anomaly,
+                        user_confirmed_crash=request.user_confirmed_crash,
+                        metadata_json=json.dumps(request.metadata),
+                    )
+                )
+                session.commit()
+
         return {"window_id": window_id, "storage_path": str(storage_path)}
 
     def load_metadata(self) -> list[dict]:
+        if database_enabled():
+            assert SessionLocal is not None
+            with SessionLocal() as session:
+                records = session.scalars(select(IMUWindowRecord).order_by(IMUWindowRecord.created_at)).all()
+                return [
+                    {
+                        "window_id": record.window_id,
+                        "device_id": record.device_id,
+                        "created_at": record.created_at.isoformat(),
+                        "storage_path": record.storage_path,
+                        "num_samples": record.num_samples,
+                        "model_version": record.model_version,
+                        "anomaly_score": record.anomaly_score,
+                        "predicted_anomaly": record.predicted_anomaly,
+                        "user_confirmed_crash": record.user_confirmed_crash,
+                        "metadata": json.loads(record.metadata_json or "{}"),
+                    }
+                    for record in records
+                ]
+
         if not self.metadata_path.exists():
             return []
         records = []

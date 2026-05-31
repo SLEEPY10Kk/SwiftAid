@@ -11,6 +11,8 @@ pyyaml
 fastapi
 uvicorn
 pydantic
+sqlalchemy
+psycopg2-binary
 requests
 torch
 torchvision
@@ -21,4 +23,3 @@ opencv-python
 
 # Flutter dependencies are managed separately
 # inside flutter_imu_client/pubspec.yaml
-```
