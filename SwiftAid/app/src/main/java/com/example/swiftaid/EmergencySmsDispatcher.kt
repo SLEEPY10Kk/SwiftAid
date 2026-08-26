@@ -3,6 +3,7 @@ package com.example.swiftaid
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import android.telephony.SmsManager
 import android.telephony.PhoneNumberUtils
 import android.util.Log
@@ -55,7 +56,12 @@ object EmergencySmsDispatcher {
             return EmergencySmsDispatchResult(contacts.size, 0, message)
         }
 
-        val smsManager = SmsManager.getDefault()
+        val smsManager = resolveSmsManager(context)
+        if (smsManager == null) {
+            Log.e(TAG, "No SmsManager available; cannot send emergency SMS")
+            return EmergencySmsDispatchResult(contacts.size, 0, message)
+        }
+
         var sentParts = 0
         contacts.forEach { phoneNumber ->
             runCatching {
@@ -69,6 +75,21 @@ object EmergencySmsDispatcher {
 
         return EmergencySmsDispatchResult(contacts.size, sentParts, message)
     }
+
+    /**
+     * SmsManager.getDefault() is deprecated from API 31 and resolves to an arbitrary subscription
+     * on multi-SIM handsets, which are the norm in this app's target market - an SOS could go out
+     * on a SIM with no balance or no service. The system-service instance is bound to the device's
+     * chosen default SMS subscription instead.
+     */
+    @Suppress("DEPRECATION")
+    private fun resolveSmsManager(context: Context): SmsManager? = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            context.getSystemService(SmsManager::class.java)
+        } else {
+            SmsManager.getDefault()
+        }
+    }.getOrNull() ?: runCatching { SmsManager.getDefault() }.getOrNull()
 
     fun getEmergencyContacts(context: Context): List<String> {
         return context

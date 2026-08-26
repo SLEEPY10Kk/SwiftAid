@@ -82,6 +82,10 @@ class CrashDetectionService : Service(), SensorEventListener, NativeCrashBridge.
     @Volatile
     private var lastMovingElapsedMs = 0L
 
+    // Absolute deadline for the next sensor tick, so sampling runs at a fixed rate instead of
+    // drifting by however long each tick's processing takes.
+    private var nextSampleUptimeMs = 0L
+
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             latestLocation = result.lastLocation ?: return
@@ -100,7 +104,17 @@ class CrashDetectionService : Service(), SensorEventListener, NativeCrashBridge.
             val location = latestLocation
             appendSnapshotIfMoving(location)
             NativeCrashBridge.feedSensorData(feedAccel, feedGyro, latestAudioDb)
-            sensorHandler?.postDelayed(this, SENSOR_SAMPLE_MS)
+
+            // Fixed-rate, not fixed-delay: postDelayed() would start counting *after* the work
+            // above, so the real period became 20 ms + processing time and the effective rate sat
+            // below the 50 Hz the detector is tuned for. Anchor each tick to an absolute deadline
+            // instead, and if we ever fall a whole period behind, skip ahead rather than firing a
+            // catch-up burst of samples with near-zero spacing.
+            var next = nextSampleUptimeMs + SENSOR_SAMPLE_MS
+            val now = SystemClock.uptimeMillis()
+            if (next <= now) next = now + SENSOR_SAMPLE_MS
+            nextSampleUptimeMs = next
+            sensorHandler?.postAtTime(this, next)
         }
     }
 
@@ -137,20 +151,33 @@ class CrashDetectionService : Service(), SensorEventListener, NativeCrashBridge.
     }
 
     override fun onDestroy() {
+        // Order matters: both worker threads touch resources that are freed below, so each thread
+        // must be stopped and joined *before* the resource it uses is released.
         monitoring = false
         audioRunning = false
-        sensorHandler?.removeCallbacksAndMessages(null)
+
         sensorManager.unregisterListener(this)
-        sensorThread?.quitSafely()
         fusedLocationClient.removeLocationUpdates(locationCallback)
+        sensorHandler?.removeCallbacksAndMessages(null)
+
+        // Drain the sensor thread before nativeShutdown(); samplerRunnable calls into native code
+        // and a queued tick running after shutdown would touch freed native state.
+        sensorThread?.quitSafely()
+        runCatching { sensorThread?.join(THREAD_JOIN_TIMEOUT_MS) }
+        sensorThread = null
+        sensorHandler = null
+
+        // Join the metering thread before stop()/release(); it holds its own AudioRecord reference
+        // and calling read() on a released instance crashes in native audio.
+        runCatching { audioThread?.join(THREAD_JOIN_TIMEOUT_MS) }
+        audioThread = null
         val record = audioRecord
         audioRecord = null
         record?.runCatching {
             stop()
             release()
         }
-        runCatching { audioThread?.join(AUDIO_THREAD_JOIN_TIMEOUT_MS) }
-        audioThread = null
+
         releaseMonitoringWakeLock()
         configManager?.stop()
         configManager = null
@@ -191,8 +218,11 @@ class CrashDetectionService : Service(), SensorEventListener, NativeCrashBridge.
 
     private fun startMonitoring() {
         if (monitoring) return
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            Log.e(TAG, "RECORD_AUDIO is required before starting the microphone foreground service")
+        // Crash detection runs off the accelerometer/gyroscope. The microphone only supplies a
+        // supplementary dB level, so a denied RECORD_AUDIO must degrade audio metering rather than
+        // disable detection outright. We still need at least one granted foreground-service type.
+        if (!hasAudioPermission() && !hasLocationPermission()) {
+            Log.e(TAG, "Neither RECORD_AUDIO nor location is granted; cannot run monitoring service")
             stopSelf()
             return
         }
@@ -223,7 +253,12 @@ class CrashDetectionService : Service(), SensorEventListener, NativeCrashBridge.
 
         return runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                var foregroundType = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                // Declare only the types we actually hold permission for. Declaring MICROPHONE
+                // without RECORD_AUDIO throws SecurityException on Android 14+.
+                var foregroundType = 0
+                if (hasAudioPermission()) {
+                    foregroundType = foregroundType or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                }
                 if (hasLocationPermission()) {
                     foregroundType = foregroundType or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
                 }
@@ -255,6 +290,7 @@ class CrashDetectionService : Service(), SensorEventListener, NativeCrashBridge.
             sensorManager.registerListener(this, gyroscope, SENSOR_DELAY_US, sensorHandler)
         }
 
+        nextSampleUptimeMs = SystemClock.uptimeMillis()
         sensorHandler?.post(samplerRunnable)
     }
 
@@ -271,11 +307,21 @@ class CrashDetectionService : Service(), SensorEventListener, NativeCrashBridge.
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, LOCATION_SAMPLE_INTERVAL_MS)
             .setMinUpdateIntervalMillis(LOCATION_FASTEST_INTERVAL_MS)
             .build()
-        fusedLocationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper())
+        // Deliver onto the sensor thread rather than the main looper. latestLocation is @Volatile
+        // and is only read by the sampler, so routing it here keeps a 1 Hz callback off the UI
+        // thread for the entire time monitoring is active.
+        val callbackLooper = sensorThread?.looper ?: Looper.getMainLooper()
+        fusedLocationClient.requestLocationUpdates(request, locationCallback, callbackLooper)
     }
 
     @SuppressLint("MissingPermission")
     private fun startAudioMetering() {
+        if (!hasAudioPermission()) {
+            // Detection continues on IMU data alone; the native engine treats 0 dB as "no signal".
+            Log.i(TAG, "RECORD_AUDIO not granted; running crash detection without audio metering")
+            latestAudioDb = 0f
+            return
+        }
         val minBuffer = AudioRecord.getMinBufferSize(
             AUDIO_SAMPLE_RATE,
             AudioFormat.CHANNEL_IN_MONO,
@@ -318,8 +364,16 @@ class CrashDetectionService : Service(), SensorEventListener, NativeCrashBridge.
 
             while (audioRunning) {
                 val read = record.read(buffer, 0, buffer.size)
-                if (read > 0) {
-                    latestAudioDb = estimateDb(buffer, read)
+                when {
+                    read > 0 -> latestAudioDb = estimateDb(buffer, read)
+                    // A negative return is a hard error (ERROR_INVALID_OPERATION, ERROR_DEAD_OBJECT,
+                    // ERROR_BAD_VALUE). read() then stops blocking, so continuing would spin this
+                    // thread at 100% CPU until the service dies. Stop metering instead.
+                    read < 0 -> {
+                        Log.e(TAG, "AudioRecord.read failed with $read; stopping audio metering")
+                        latestAudioDb = 0f
+                        audioRunning = false
+                    }
                 }
             }
         }
@@ -344,6 +398,9 @@ class CrashDetectionService : Service(), SensorEventListener, NativeCrashBridge.
         return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
+
+    private fun hasAudioPermission(): Boolean =
+        checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
     private fun appendSnapshotIfMoving(location: Location?) {
         if (pendingCrashTriggerTimestampNs != null) {
@@ -588,7 +645,10 @@ class CrashDetectionService : Service(), SensorEventListener, NativeCrashBridge.
         private const val AUDIO_SAMPLE_RATE = 16_000
         private const val BYTES_PER_PCM_16_SAMPLE = 2
         private const val AUDIO_DBFS_TO_SPL_OFFSET = 120.0
-        private const val AUDIO_THREAD_JOIN_TIMEOUT_MS = 500L
+        // Bounded so onDestroy() cannot ANR if a worker is wedged. One audio read at 16 kHz with a
+        // 3200-sample buffer returns in ~200 ms, so 750 ms leaves headroom without risking the
+        // 5-second service-teardown budget.
+        private const val THREAD_JOIN_TIMEOUT_MS = 750L
 
         fun start(context: Context) {
             val intent = Intent(context, CrashDetectionService::class.java).setAction(ACTION_START)

@@ -8,6 +8,8 @@ initializeApp();
 
 const db = getFirestore();
 const TARGET_RADIUS_METERS = 20_000;
+// Hard cap enforced by the Admin SDK on a single sendEachForMulticast call.
+const FCM_MULTICAST_LIMIT = 500;
 const VALID_SERVICE_TYPES = new Set(["POLICE", "HOSPITAL"]);
 const EARTH_RADIUS_METERS = 6_371_000;
 
@@ -93,21 +95,49 @@ exports.enrichSosTargetResponders = onDocumentCreated(
     };
 
     if (fcmTargets.length > 0) {
-      const response = await getMessaging().sendEachForMulticast({
-        tokens: fcmTargets.map((responder) => responder.fcmToken),
-        data: buildSosAlertPayload(sos, eventId, latitude, longitude),
-        android: {
-          priority: "high",
-        },
-      });
+      // sendEachForMulticast rejects more than FCM_MULTICAST_LIMIT tokens in one call. An
+      // unchunked send would throw once a dense area had that many responders in range, and the
+      // throw would abort the whole trigger - so the SOS document would never receive its
+      // nearestResponders/routing fields either. Chunk instead, and let one failed batch cost
+      // only that batch.
+      const payload = buildSosAlertPayload(sos, eventId, latitude, longitude);
+      let successCount = 0;
+      let failureCount = 0;
+      let failedIds = [];
+
+      for (let i = 0; i < fcmTargets.length; i += FCM_MULTICAST_LIMIT) {
+        const batch = fcmTargets.slice(i, i + FCM_MULTICAST_LIMIT);
+        try {
+          const response = await getMessaging().sendEachForMulticast({
+            tokens: batch.map((responder) => responder.fcmToken),
+            data: payload,
+            android: {
+              priority: "high",
+            },
+          });
+          successCount += response.successCount;
+          failureCount += response.failureCount;
+          failedIds = failedIds.concat(failedResponderIds(batch, response.responses));
+        } catch (error) {
+          // Keep going: notifying some responders beats notifying none.
+          failureCount += batch.length;
+          failedIds = failedIds.concat(batch.map((responder) => responder.id));
+          logger.error("FCM multicast batch failed", {
+            eventId,
+            batchStart: i,
+            batchSize: batch.length,
+            error: error.message,
+          });
+        }
+      }
 
       notificationResult = {
         attempted: true,
         tokenCount: fcmTargets.length,
-        successCount: response.successCount,
-        failureCount: response.failureCount,
+        successCount,
+        failureCount,
         notifiedResponderIds: fcmTargets.map((responder) => responder.id),
-        failedResponderIds: failedResponderIds(fcmTargets, response.responses),
+        failedResponderIds: failedIds,
         sentAt: FieldValue.serverTimestamp(),
       };
     }
