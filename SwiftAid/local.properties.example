@@ -1,0 +1,23 @@
+# Copy to local.properties and fill in real values. local.properties is gitignored.
+
+# Path to your Android SDK.
+#   macOS:   /Users/<you>/Library/Android/sdk
+#   Windows: C\:\\Users\\<you>\\AppData\\Local\\Android\\Sdk
+#   Linux:   /home/<you>/Android/Sdk
+sdk.dir=/Users/<you>/Library/Android/sdk
+
+# Google Maps SDK for Android key. Without it the map renders blank.
+MAPS_API_KEY=AIzaSy-your-maps-key
+
+# Google OAuth web client ID. Without it Google sign-in fails.
+GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+
+# Backend endpoints
+API_BASE_URL=http://192.168.x.x:8001
+KSHITI_API_BASE_URL=https://your-ml-service.example.app
+
+# Release signing (optional; only needed for :app:assembleRelease)
+#RELEASE_STORE_FILE=../release.keystore
+#RELEASE_STORE_PASSWORD=
+#RELEASE_KEY_ALIAS=
+#RELEASE_KEY_PASSWORD=

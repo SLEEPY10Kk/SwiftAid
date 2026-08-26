@@ -1,0 +1,57 @@
+<resources>
+    <string name="app_name">SwiftAid</string>
+    <string name="main_title">SwiftAid</string>
+    <string name="main_subtitle">Crash monitoring and emergency contact dispatch</string>
+    <string name="main_contacts_label">Contact</string>
+    <string name="main_contacts_caption">Select up to 5 saved contacts. You can unselect them from the selector screen.</string>
+    <string name="main_contacts_count">Emergency contacts (%1$d/5)</string>
+    <string name="main_contacts_empty">No emergency contacts selected yet.</string>
+    <string name="main_pick_contact">+  Add new\nMax 5 contacts</string>
+    <string name="main_contacts_save">Save contacts</string>
+    <string name="main_start">Start SOS Monitoring</string>
+    <string name="main_stop">Stop Monitoring</string>
+    <string name="main_overlay_permission">Grant Overlay Permission</string>
+    <string name="main_manual_sos">Manual SOS Trigger</string>
+    <string name="main_status_ready">Ready</string>
+    <string name="main_status_monitoring">Monitoring at 50Hz</string>
+    <string name="main_status_stopped">Monitoring stopped</string>
+    <string name="main_status_auto_starting">Preparing automatic monitoring</string>
+    <string name="main_status_gps_required">Turn on GPS/location to start monitoring</string>
+    <string name="main_status_overlay_required">Allow display over other apps to show SOS on lock screen</string>
+    <string name="main_status_permissions_missing">Permissions required for microphone, SMS, location, and notifications</string>
+    <string name="main_status_manual_permissions_missing">Manual SOS needs SMS and location permissions</string>
+    <string name="main_status_contacts_missing">Add at least one emergency contact</string>
+    <string name="main_status_contact_added">Emergency contact added</string>
+    <string name="main_status_contact_exists">That contact is already selected</string>
+    <string name="main_status_contact_limit">You can select up to 5 emergency contacts</string>
+    <string name="main_status_contacts_updated">Emergency contacts updated</string>
+    <string name="main_status_no_saved_contacts">No saved phone contacts found</string>
+    <string name="main_status_contact_pick_failed">Could not read that contact number</string>
+    <string name="main_status_dialer_role_unavailable">Default dialer role is not available on this device</string>
+    <string name="monitor_channel_name">Crash monitoring</string>
+    <string name="crash_channel_name">Crash alert</string>
+    <string name="monitor_notification_title">SwiftAid active</string>
+    <string name="monitor_notification_text">Crash monitoring is running</string>
+    <string name="crash_notification_title">Crash detected</string>
+    <string name="crash_notification_text">Use Stop on the SOS screen to cancel dispatch</string>
+    <string name="accessibility_service_description">Allows SwiftAid to continue an emergency call flow after SOS confirmation.</string>
+    <string name="sos_title">Emergency SOS</string>
+    <string name="sos_subtitle">Emergency dispatch starts when the countdown ends.</string>
+    <string name="sos_status_counting">SwiftAid will dispatch the SOS\nand use contacts as relay backup.</string>
+    <string name="sos_status_cancelled">SOS cancelled</string>
+    <string name="sos_status_location">Fetching emergency location</string>
+    <string name="sos_status_cloud_sent">SOS sent to emergency server</string>
+    <string name="sos_status_pending_sync">SOS saved offline. SwiftAid will sync when network returns.</string>
+    <string name="sos_status_not_sent">SOS could not send. Check contacts and SMS permission.</string>
+    <string name="sos_slider_label">Emergency Call</string>
+    <string name="sos_stop_label">Stop</string>
+    <string name="sos_countdown_seconds">%1$d</string>
+    <plurals name="sos_status_sent">
+        <item quantity="one">SOS sent to %d contact</item>
+        <item quantity="other">SOS sent to %d contacts</item>
+    </plurals>
+    <plurals name="sos_status_sms_relay">
+        <item quantity="one">Internet unavailable. SOS relayed to %d contact.</item>
+        <item quantity="other">Internet unavailable. SOS relayed to %d contacts.</item>
+    </plurals>
+</resources>

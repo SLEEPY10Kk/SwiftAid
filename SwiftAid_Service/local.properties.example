@@ -1,0 +1,8 @@
+# Copy to local.properties and fill in real values. local.properties is gitignored.
+
+# Path to your Android SDK. Use the path for YOUR OS -- a Windows path
+# committed here will break the build for macOS/Linux teammates.
+#   macOS:   /Users/<you>/Library/Android/sdk
+#   Windows: C\:\\Users\\<you>\\AppData\\Local\\Android\\Sdk
+#   Linux:   /home/<you>/Android/Sdk
+sdk.dir=/Users/<you>/Library/Android/sdk

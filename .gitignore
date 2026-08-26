@@ -1,0 +1,57 @@
+# ---- Secrets / local config (never commit) ----
+.env
+local.properties
+**/local.properties
+local.properties.bak
+**/local.properties.bak
+client_secret_*.json
+*.keystore
+*.jks
+serviceAccountKey*.json
+
+# ---- Gradle / Android build output ----
+.gradle/
+**/.gradle/
+build/
+**/build/
+.kotlin/
+**/.kotlin/
+.cxx/
+**/.cxx/
+captures/
+.externalNativeBuild/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# ---- IDE ----
+.idea/
+**/.idea/
+*.iml
+.vscode/
+.cursor/
+
+# ---- Firebase ----
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
+**/functions/node_modules/
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# ---- OS ----
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+# ---- Archives / large local blobs ----
+*.zip
